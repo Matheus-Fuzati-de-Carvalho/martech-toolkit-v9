@@ -45,31 +45,24 @@ resource "time_sleep" "wait_for_iam" {
   create_duration = "90s"
 }
 
-# Automação completa do Workspace com Pull Inicial
+# Automação do Workspace (Root Level)
 resource "null_resource" "workspace_init" {
   provisioner "local-exec" {
     command = <<EOT
       TOKEN=$(gcloud auth print-access-token)
       REPO_PATH="projects/${var.project_id}/locations/${var.region}/repositories/${google_dataform_repository.repo.name}"
       
-      echo "⏳ Aguardando 40s para estabilização do Git..."
+      echo "⏳ Aguardando estabilização do Git na raiz..."
       sleep 40
 
-      echo "🛠️ Criando Workspace 'main-workspace'..."
-      curl -X POST -H "Authorization: Bearer $TOKEN" \
-           -H "Content-Type: application/json" \
-           "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces?workspaceId=main-workspace" || echo "Workspace já existe."
+      echo "🛠️ Criando Workspace principal..."
+      curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+           "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces?workspaceId=main-workspace" || true
 
-      echo "📥 Sincronizando arquivos do GitHub (Pull)..."
-      curl -X POST -H "Authorization: Bearer $TOKEN" \
-           -H "Content-Type: application/json" \
+      echo "📥 Sincronizando arquivos da Raiz (Pull)..."
+      curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
            "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces/main-workspace:pull"
 EOT
   }
-
-  # GARANTA QUE O DEPENDS_ON ESTEJA ASSIM:
-  depends_on = [
-    google_dataform_repository.repo, 
-    time_sleep.wait_for_iam
-  ]
+  depends_on = [google_dataform_repository.repo, time_sleep.wait_for_iam]
 }
