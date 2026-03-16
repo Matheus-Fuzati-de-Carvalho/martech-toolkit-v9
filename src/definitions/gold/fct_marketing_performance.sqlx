@@ -1,0 +1,15 @@
+config { 
+  type: "table", 
+  schema: "martech_gold",
+  disabled: !data.enable_marketing 
+}
+
+SELECT
+  COALESCE(g.data, a.data) AS data,
+  COALESCE(g.campanha, a.campanha) AS campanha,
+  SUM(g.sessoes) AS sessoes,
+  SUM(a.custo) AS investimento,
+  SAFE_DIVIDE(SUM(a.custo), SUM(g.sessoes)) AS cpc_sessao
+FROM (SELECT data, campanha, COUNT(DISTINCT session_id) AS sessoes FROM ${ref("slv_ga4_events")} GROUP BY 1,2) g
+FULL OUTER JOIN (SELECT data, campanha, custo FROM ${ref("slv_ads_performance")}) a USING (data, campanha)
+GROUP BY 1,2

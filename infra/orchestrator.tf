@@ -1,38 +1,25 @@
-resource "google_workflows_workflow" "dataform_orchestrator" {
-  name            = "dataform-martech-v8-flow"
+resource "google_workflows_workflow" "v8_flow" {
+  name            = "martech-v8-orchestrator"
   region          = var.region
-  description     = "Orquestrador do Dataform v8 via API"
-  service_account = google_service_account.toolkit_sa.id
+  service_account = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+  source_contents = templatefile("${path.module}/workflow.yaml", {
+    project_id = var.project_id,
+    region     = var.region,
+    repo_name  = google_dataform_repository.repo.name,
+    flavor     = var.flavor
+  })
+}
 
-  source_contents = <<EOF
-main:
-  params: [args]
-  steps:
-    - init:
-        assign:
-          - repository: "projects/$${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}/locations/${var.region}/repositories/martech_toolkit_v8"
-    - createCompilationResult:
-        call: http.post
-        args:
-          url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
-          auth:
-            type: OAuth2
-          body:
-            gitCommitish: "main"
-        result: compilationResult
-    - createWorkflowInvocation:
-        call: http.post
-        args:
-          url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
-          auth:
-            type: OAuth2
-          body:
-            compilationResult: $${compilationResult.body.name}
-            invocationConfig:
-              includedTags: ["${var.flavor}"]
-              transitiveDependenciesIncluded: true
-        result: invocation
-    - returnResult:
-        return: $${invocation.body.name}
-EOF
+resource "google_cloud_scheduler_job" "v8_trigger" {
+  name     = "daily-v8-sync"
+  schedule = "0 6 * * *"
+  region   = var.region
+
+  http_target {
+    http_method = "POST"
+    uri         = "https://workflowexecutions.googleapis.com/v1/${google_workflows_workflow.v8_flow.id}/executions"
+    oauth_token {
+      service_account_email = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+    }
+  }
 }

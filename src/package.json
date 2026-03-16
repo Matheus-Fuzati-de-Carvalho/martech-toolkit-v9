@@ -1,5 +1,5 @@
 {
-  "name": "martech-toolkit-v8",
+  "name": "beta-toolkit-martech",
   "dependencies": {
     "@dataform/core": "3.0.42"
   }

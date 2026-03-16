@@ -1,50 +1,72 @@
-provider "google" {
-  project = var.project_id
-  region  = var.region
-}
-
-# Habilitação de APIs Core
-resource "google_project_service" "required_apis" {
+# Ativação de APIs
+resource "google_project_service" "apis" {
   for_each = toset([
-    "dataform.googleapis.com",
-    "workflows.googleapis.com",
-    "cloudscheduler.googleapis.com",
-    "bigquery.googleapis.com",
-    "secretmanager.googleapis.com",
-    "cloudbuild.googleapis.com"
+    "compute.googleapis.com", "bigquery.googleapis.com",
+    "dataform.googleapis.com", "workflows.googleapis.com",
+    "cloudscheduler.googleapis.com", "secretmanager.googleapis.com",
+    "iam.googleapis.com"
   ])
   service = each.key
   disable_on_destroy = false
 }
 
-# Service Account do Executor do Toolkit
-resource "google_service_account" "toolkit_sa" {
-  account_id   = "martech-toolkit-v8-sa"
-  display_name = "Martech Toolkit v8 Executor"
-  depends_on   = [google_project_service.required_apis]
+# Identidade do Dataform
+resource "google_project_service_identity" "dataform_sa" {
+  provider = google-beta
+  service  = "dataform.googleapis.com"
+  depends_on = [google_project_service.apis]
 }
 
-# Atribuição de Permissões (IAM)
-resource "google_project_iam_member" "roles" {
-  for_each = toset([
-    "roles/bigquery.admin",
-    "roles/dataform.editor",
-    "roles/workflows.invoker",
-    "roles/secretmanager.secretAccessor"
-  ])
-  project = var.project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.toolkit_sa.email}"
+# Pausa Técnica (90s para ambiente virgem)
+resource "time_sleep" "wait_90s" {
+  depends_on = [google_project_service_identity.dataform_sa]
+  create_duration = "90s"
 }
 
-# RESOLUÇÃO ERRO V7: Aguarda 60s para propagação do IAM antes de criar o repo Dataform
-resource "time_sleep" "iam_propagation_wait" {
-  depends_on      = [google_project_iam_member.roles]
-  create_duration = "60s"
+# Permissões (Usando a SA de Compute como Orquestradora conforme v7)
+data "google_project" "project" {}
+
+resource "google_project_iam_member" "df_permissions" {
+  for_each = toset(["roles/bigquery.admin", "roles/secretmanager.secretAccessor"])
+  project  = var.project_id
+  role     = each.key
+  member   = "serviceAccount:${google_project_service_identity.dataform_sa.email}"
 }
 
-resource "google_project_iam_member" "sa_user" {
-  project = var.project_id
-  role    = "roles/iam.serviceAccountUser"
-  member  = "serviceAccount:${google_service_account.toolkit_sa.email}"
+resource "google_project_iam_member" "workflow_perms" {
+  for_each = toset(["roles/dataform.editor", "roles/workflows.invoker"])
+  project  = var.project_id
+  role     = each.key
+  member   = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
+# Repositório Dataform
+resource "google_dataform_repository" "repo" {
+  provider = google-beta
+  name     = "martech-v8-repository"
+  region   = var.region
+
+  git_remote_settings {
+    url                                = var.github_repo_url
+    default_branch                     = "main"
+    authentication_token_secret_version = "projects/${var.project_id}/secrets/dataform-github-token/versions/latest"
+  }
+
+  workspace_compilation_overrides {
+    default_database = var.project_id
+  }
+}
+
+# Setup do Workspace (CURL para garantir que o workspace 'main' exista)
+resource "null_resource" "workspace_init" {
+  provisioner "local-exec" {
+    command = <<EOT
+      TOKEN=$(gcloud auth print-access-token)
+      REPO_URL="https://dataform.googleapis.com/v1beta1/projects/${var.project_id}/locations/${var.region}/repositories/${google_dataform_repository.repo.name}"
+      sleep 30
+      curl -X POST -H "Authorization: Bearer $TOKEN" "$REPO_URL/workspaces?workspaceId=main" || true
+      curl -X POST -H "Authorization: Bearer $TOKEN" "$REPO_URL/workspaces/main:pull"
+EOT
+  }
+  depends_on = [google_dataform_repository.repo, time_sleep.wait_90s]
 }

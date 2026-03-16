@@ -1,0 +1,18 @@
+config { 
+  type: "table", 
+  schema: "martech_gold",
+  disabled: !data.enable_retail_media 
+}
+
+SELECT
+  data,
+  campanha,
+  -- Lógica de Retail Media: Extração de Categoria e Marca via Regex no nome da campanha
+  REGEXP_EXTRACT(campanha, r'\[(.*?)\]') AS categoria,
+  REGEXP_EXTRACT(campanha, r'-(.*?)-') AS marca,
+  SUM(cliques) AS cliques,
+  SUM(custo) AS custo,
+  -- KPI de Retail Media (ACOS Mockado para o Magalu)
+  SAFE_DIVIDE(SUM(custo), 1000) AS acos_estimado 
+FROM ${ref("slv_ads_performance")}
+GROUP BY 1,2,3,4

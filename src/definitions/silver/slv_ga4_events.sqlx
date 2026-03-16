@@ -1,0 +1,9 @@
+config { type: "table", schema: "martech_silver" }
+
+SELECT
+  parse_date('%Y%m%d', event_date) AS data,
+  event_name,
+  (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS session_id,
+  traffic_source.name AS campanha
+FROM `${data.project_id}.${data.raw_ga4}.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20260301' AND '20260311'

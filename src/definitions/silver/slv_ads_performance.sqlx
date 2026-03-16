@@ -1,0 +1,9 @@
+config { type: "table", schema: "martech_silver" }
+
+SELECT
+  _DATA_DATE AS data,
+  CampaignName AS campanha,
+  Cost / 1000000 AS custo,
+  Clicks AS cliques
+FROM `${data.project_id}.${data.raw_ads}.${data.raw_ads_table}`
+WHERE _DATA_DATE BETWEEN '2026-03-01' AND '2026-03-11'

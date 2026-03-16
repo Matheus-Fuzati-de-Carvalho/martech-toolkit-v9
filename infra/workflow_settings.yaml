@@ -4,5 +4,6 @@ defaultDataset: "martech_refined"
 defaultAssertionDataset: "martech_assertions"
 vars:
   flavor: "full"
-  raw_ga4_table: "analytics_123456789.events_*"
-  raw_ads_table: "google_ads.campaign_performance_report"
+  raw_ga4_dataset: "raw_ga4"
+  raw_ads_dataset: "raw_ads"
+  raw_ads_table: "ad_CampaignBasicStats_987654321"
