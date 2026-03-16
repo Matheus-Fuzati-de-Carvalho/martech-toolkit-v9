@@ -17,15 +17,6 @@ resource "google_project_service_identity" "dataform_sa" {
   depends_on = [google_project_service.apis]
 }
 
-# Pausa Técnica (90s para ambiente virgem)
-resource "time_sleep" "wait_for_iam" {
-  depends_on = [
-    google_project_iam_member.df_bq,
-    google_project_iam_member.df_secret
-  ]
-  create_duration = "90s"
-}
-
 # Permissões (Usando a SA de Compute como Orquestradora conforme v7)
 data "google_project" "project" {}
 
@@ -43,6 +34,14 @@ resource "google_project_iam_member" "workflow_perms" {
   member   = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
 
+# CORREÇÃO AQUI: Os nomes nos depends_on devem ser os nomes definidos acima
+resource "time_sleep" "wait_for_iam" {
+  depends_on = [
+    google_project_iam_member.df_permissions,
+    google_project_iam_member.workflow_perms
+  ]
+  create_duration = "90s"
+}
 
 # Setup do Workspace (CURL para garantir que o workspace 'main' exista)
 resource "null_resource" "workspace_init" {
@@ -55,5 +54,6 @@ resource "null_resource" "workspace_init" {
       curl -X POST -H "Authorization: Bearer $TOKEN" "$REPO_URL/workspaces/main:pull"
 EOT
   }
-  depends_on = [google_dataform_repository.repo, time_sleep.wait_90s]
+  # CORREÇÃO AQUI: O nome do sleep é wait_for_iam
+  depends_on = [google_dataform_repository.repo, time_sleep.wait_for_iam]
 }
