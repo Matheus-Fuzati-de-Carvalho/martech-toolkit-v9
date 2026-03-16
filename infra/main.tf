@@ -43,22 +43,6 @@ resource "google_project_iam_member" "workflow_perms" {
   member   = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
 
-# Repositório Dataform
-resource "google_dataform_repository" "repo" {
-  provider = google-beta
-  name     = "martech-v8-repository"
-  region   = var.region
-
-  git_remote_settings {
-    url                                = var.github_repo_url
-    default_branch                     = "main"
-    authentication_token_secret_version = "projects/${var.project_id}/secrets/dataform-github-token/versions/latest"
-  }
-
-  workspace_compilation_overrides {
-    default_database = var.project_id
-  }
-}
 
 # Setup do Workspace (CURL para garantir que o workspace 'main' exista)
 resource "null_resource" "workspace_init" {
