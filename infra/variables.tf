@@ -1,27 +1,23 @@
 variable "project_id" {
-  type        = string
-  description = "ID do projeto GCP onde o Toolkit será instalado."
+  type = string
 }
 
 variable "region" {
-  type        = string
-  default     = "us-central1"
-  description = "Região para os recursos de infraestrutura."
+  type    = string
+  default = "us-east1"
 }
 
 variable "github_repo_url" {
-  type        = string
-  description = "URL do repositório GitHub (ex: https://github.com/usuario/v8-toolkit.git)"
+  type = string
 }
 
-variable "github_token_secret_name" {
-  type        = string
-  default     = "github-token-dataform"
-  description = "Nome do segredo no Secret Manager contendo o Personal Access Token."
+# ESSA É A VARIÁVEL QUE O DEPLOY.SH PRECISA:
+variable "github_token" {
+  type      = string
+  sensitive = true
 }
 
 variable "flavor" {
-  type        = string
-  default     = "full"
-  description = "Sabor da instalação: marketing, retail_media ou full."
+  type    = string
+  default = "full"
 }

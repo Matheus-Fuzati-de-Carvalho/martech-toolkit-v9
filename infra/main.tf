@@ -12,14 +12,15 @@ resource "google_project_service" "apis" {
 
 # Identidade do Dataform
 resource "google_project_service_identity" "dataform_sa" {
-  provider = google-beta
-  service  = "dataform.googleapis.com"
+  provider   = google-beta
+  service    = "dataform.googleapis.com"
   depends_on = [google_project_service.apis]
 }
 
-# Permissões (Usando a SA de Compute como Orquestradora conforme v7)
+# Dados do Projeto
 data "google_project" "project" {}
 
+# Permissões do Dataform
 resource "google_project_iam_member" "df_permissions" {
   for_each = toset(["roles/bigquery.admin", "roles/secretmanager.secretAccessor"])
   project  = var.project_id
@@ -27,6 +28,7 @@ resource "google_project_iam_member" "df_permissions" {
   member   = "serviceAccount:${google_project_service_identity.dataform_sa.email}"
 }
 
+# Permissões do Workflow (usando SA padrão compute)
 resource "google_project_iam_member" "workflow_perms" {
   for_each = toset(["roles/dataform.editor", "roles/workflows.invoker"])
   project  = var.project_id
@@ -34,7 +36,7 @@ resource "google_project_iam_member" "workflow_perms" {
   member   = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
 
-# CORREÇÃO AQUI: Os nomes nos depends_on devem ser os nomes definidos acima
+# PAUSA TÉCNICA (Ajustado para os nomes reais acima)
 resource "time_sleep" "wait_for_iam" {
   depends_on = [
     google_project_iam_member.df_permissions,
@@ -43,7 +45,7 @@ resource "time_sleep" "wait_for_iam" {
   create_duration = "90s"
 }
 
-# Setup do Workspace (CURL para garantir que o workspace 'main' exista)
+# Setup do Workspace (CURL)
 resource "null_resource" "workspace_init" {
   provisioner "local-exec" {
     command = <<EOT
@@ -54,6 +56,6 @@ resource "null_resource" "workspace_init" {
       curl -X POST -H "Authorization: Bearer $TOKEN" "$REPO_URL/workspaces/main:pull"
 EOT
   }
-  # CORREÇÃO AQUI: O nome do sleep é wait_for_iam
+  # CORRIGIDO: Referência correta ao sleep
   depends_on = [google_dataform_repository.repo, time_sleep.wait_for_iam]
 }
