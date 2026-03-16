@@ -1,4 +1,4 @@
-defaultProject: "${project_id}"
+defaultProject: "beta-toolkit-martech"
 defaultLocation: "US"
 defaultDataset: "martech_refined"
 defaultAssertionDataset: "martech_assertions"
