@@ -1,0 +1,27 @@
+main:
+    params: [args]
+    steps:
+    - init:
+        assign:
+            - repository: "projects/${project_id}/locations/${region}/repositories/${repo_name}"
+    - createCompilation:
+        call: http.post
+        args:
+            url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
+            auth: {type: OAuth2}
+            body:
+                gitCommitish: "main"
+                codeCompilationConfig:
+                    vars:
+                        flavor: "${flavor}"
+        result: compilation
+    - execute:
+        call: http.post
+        args:
+            url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
+            auth: {type: OAuth2}
+            body:
+                compilationResult: $${compilation.body.name}
+        result: invocation
+    - complete:
+        return: $${invocation.body.name}

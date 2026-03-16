@@ -18,8 +18,11 @@ resource "google_project_service_identity" "dataform_sa" {
 }
 
 # Pausa Técnica (90s para ambiente virgem)
-resource "time_sleep" "wait_90s" {
-  depends_on = [google_project_service_identity.dataform_sa]
+resource "time_sleep" "wait_for_iam" {
+  depends_on = [
+    google_project_iam_member.df_bq,
+    google_project_iam_member.df_secret
+  ]
   create_duration = "90s"
 }
 
