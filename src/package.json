@@ -1,0 +1,6 @@
+{
+  "name": "martech-toolkit-v8",
+  "dependencies": {
+    "@dataform/core": "3.0.42"
+  }
+}

@@ -1,0 +1,8 @@
+defaultProject: "${project_id}"
+defaultLocation: "US"
+defaultDataset: "martech_refined"
+defaultAssertionDataset: "martech_assertions"
+vars:
+  flavor: "full"
+  raw_ga4_table: "analytics_123456789.events_*"
+  raw_ads_table: "google_ads.campaign_performance_report"

@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "gold_retail_media",
+  tags: ["retail_media"],
+  disabled: !config.enabled_modules.retail_media // Só compila se habilitado na v8
+}
+
+SELECT 
+    t1.date,
+    t1.campaign_name,
+    t1.cost,
+    t2.conversions,
+    SAFE_DIVIDE(t1.cost, t2.revenue) as acos
+FROM ${ref("ads_silver")} t1
+LEFT JOIN ${ref("ga4_silver")} t2 USING(campaign_id)

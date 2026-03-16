@@ -1,0 +1,7 @@
+{
+  "defaultSchema": "martech_refined",
+  "assertionSchema": "martech_assertions",
+  "warehouse": "bigquery",
+  "defaultAssertionDatabase": "ID_DO_PROJETO_SERA_INJETADO",
+  "defaultLocation": "US"
+}
