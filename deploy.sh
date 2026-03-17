@@ -19,6 +19,24 @@ SCHEDULE_CRON="${13:-0 6 * * *}"
 REPO_URL="https://github.com/Matheus-Fuzati-de-Carvalho/martech-toolkit-v8"
 PROJECT_ID=$(gcloud config get-value project)
 
+# --- CONFIGURANDO VARIÁVEIS PARA O TERRAFORM ---
+# Exportando como TF_VAR_, o Terraform lê automaticamente em qualquer comando
+export TF_VAR_project_id=$PROJECT_ID
+export TF_VAR_github_token=$GH_TOKEN
+export TF_VAR_github_repo_url=$REPO_URL
+export TF_VAR_flavor=$FLAVOR
+export TF_VAR_raw_ga4=$RAW_GA4
+export TF_VAR_raw_ads=$RAW_ADS
+export TF_VAR_raw_ads_table=$ADS_RAW_TAB
+export TF_VAR_silver_dataset=$SILVER_DS
+export TF_VAR_gold_dataset=$GOLD_DS
+export TF_VAR_tab_slv_ga4=$TAB_SLV_GA4
+export TF_VAR_tab_slv_ads=$TAB_SLV_ADS
+export TF_VAR_tab_gld_mkt=$TAB_GLD_MKT
+export TF_VAR_tab_gld_retail=$TAB_GLD_RETAIL
+export TF_VAR_region=$REGION
+export TF_VAR_schedule_cron=$SCHEDULE_CRON
+
 echo "🧬 Ajustando workflow_settings na raiz..."
 sed -i "s/defaultProject: .*/defaultProject: \"$PROJECT_ID\"/g" workflow_settings.yaml
 sed -i "s/defaultLocation: .*/defaultLocation: \"US\"/g" workflow_settings.yaml
@@ -34,36 +52,19 @@ gcloud secrets create dataform-github-token --replication-policy="automatic" --p
 echo -n "$GH_TOKEN" | gcloud secrets versions add dataform-github-token --data-file=- --project=$PROJECT_ID
 
 cd infra
-# REMOVIDO terraform.tfstate* daqui para manter a memória do deploy
-rm -rf .terraform .terraform.lock.hcl 
+rm -rf .terraform .terraform.lock.hcl # Mantemos o state agora!
 
 terraform init -upgrade
 
 echo "🔍 Sincronizando estado (Check de Service Account)..."
 SA_EMAIL="martech-v8-orchestrator@$PROJECT_ID.iam.gserviceaccount.com"
 
-# Importa a SA caso o estado tenha sido perdido por algum motivo
+# Agora o import funciona sem perguntar nada!
 terraform import google_service_account.martech_sa projects/$PROJECT_ID/serviceAccounts/$SA_EMAIL || true
 
 echo "🚀 Rodando Terraform Apply..."
-terraform apply \
-  -var="project_id=$PROJECT_ID" \
-  -var="github_token=$GH_TOKEN" \
-  -var="github_repo_url=$REPO_URL" \
-  -var="flavor=$FLAVOR" \
-  -var="raw_ga4=$RAW_GA4" \
-  -var="raw_ads=$RAW_ADS" \
-  -var="raw_ads_table=$ADS_RAW_TAB" \
-  -var="silver_dataset=$SILVER_DS" \
-  -var="gold_dataset=$GOLD_DS" \
-  -var="tab_slv_ga4=$TAB_SLV_GA4" \
-  -var="tab_slv_ads=$TAB_SLV_ADS" \
-  -var="tab_gld_mkt=$TAB_GLD_MKT" \
-  -var="tab_gld_retail=$TAB_GLD_RETAIL" \
-  -var="region=$REGION" \
-  -var="schedule_cron=$SCHEDULE_CRON" \
-  -auto-approve
-
+# Não precisa mais de flags -var aqui, ele pega do export acima!
+terraform apply -auto-approve
 # --- BLOCO DE OUTPUT FINAL ---
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
