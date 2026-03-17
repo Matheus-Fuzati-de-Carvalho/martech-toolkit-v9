@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# 1. Configurações Iniciais
+# Argumentos
 GH_TOKEN=$1
 FLAVOR=${2:-"full"}
 RAW_GA4=${3:-"raw_ga4"}
@@ -13,30 +13,17 @@ TAB_SLV_GA4=${8:-"slv_ga4_events"}
 TAB_SLV_ADS=${9:-"slv_ads_performance"}
 TAB_GLD_MKT=${10:-"fct_marketing_performance"}
 TAB_GLD_RETAIL=${11:-"fct_retail_media_cube"}
-REGION=${12:-"US"}
+REGION=${12:-"us-east1"} # Regional para Infra (Repo/Workflow)
 
-# IMPORTANTE: Defina sua URL aqui para o Terraform não falhar
 REPO_URL="https://github.com/Matheus-Fuzati-de-Carvalho/martech-toolkit-v8"
 PROJECT_ID=$(gcloud config get-value project)
 
-echo "🧬 Injetando configurações locais (Fallbacks)..."
+echo "🧬 Ajustando workflow_settings em infra/..."
+# O sed agora aponta para o caminho correto
+sed -i "s/defaultProject: .*/defaultProject: \"$PROJECT_ID\"/g" infra/workflow_settings.yaml
+sed -i "s/defaultLocation: .*/defaultLocation: \"US\"/g" infra/workflow_settings.yaml
 
-# Substituições no data.js
-sed -i "s/|| \"raw_ga4\"/|| \"$RAW_GA4\"/g" includes/data.js
-sed -i "s/|| \"raw_ads\"/|| \"$RAW_ADS\"/g" includes/data.js
-sed -i "s/|| \"ad_CampaignBasicStats_987654321\"/|| \"$ADS_RAW_TAB\"/g" includes/data.js
-sed -i "s/|| \"martech_silver\"/|| \"$SILVER_DS\"/g" includes/data.js
-sed -i "s/|| \"martech_gold\"/|| \"$GOLD_DS\"/g" includes/data.js
-sed -i "s/|| \"slv_ga4_events\"/|| \"$TAB_SLV_GA4\"/g" includes/data.js
-sed -i "s/|| \"slv_ads_performance\"/|| \"$TAB_SLV_ADS\"/g" includes/data.js
-sed -i "s/|| \"fct_marketing_performance\"/|| \"$TAB_GLD_MKT\"/g" includes/data.js
-sed -i "s/|| \"fct_retail_media_cube\"/|| \"$TAB_GLD_RETAIL\"/g" includes/data.js
-
-# Substituição no workflow_settings.yaml
-sed -i "s/defaultProject: .*/defaultProject: \"$PROJECT_ID\"/g" workflow_settings.yaml
-sed -i "s/defaultLocation: .*/defaultLocation: \"$REGION\"/g" workflow_settings.yaml
-
-echo "🚀 Iniciando Deploy v8.1 (Full Dynamic)..."
+echo "🚀 Iniciando Deploy v8.1..."
 
 gcloud services enable secretmanager.googleapis.com \
                        cloudresourcemanager.googleapis.com \
