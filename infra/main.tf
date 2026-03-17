@@ -76,18 +76,19 @@ EOT
   ]
 }
 
-# Criação dos Datasets (Com depends_on para evitar erro de API)
+# Criação do Dataset Silver (Fixado em US)
 resource "google_bigquery_dataset" "silver_ds" {
   dataset_id                  = var.silver_dataset
-  location                    = var.region
+  location                    = "US" # <--- FORÇAMOS 'US' AQUI PARA OS DADOS
   description                 = "Camada Silver do Toolkit Martech"
   delete_contents_on_destroy  = false
   depends_on                  = [google_project_service.apis]
 }
 
+# Criação do Dataset Gold (Fixado em US)
 resource "google_bigquery_dataset" "gold_ds" {
   dataset_id                  = var.gold_dataset
-  location                    = var.region
+  location                    = "US" # <--- FORÇAMOS 'US' AQUI PARA OS DADOS
   description                 = "Camada Gold do Toolkit Martech"
   delete_contents_on_destroy  = false
   depends_on                  = [google_project_service.apis]
