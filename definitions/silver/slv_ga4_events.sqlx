@@ -1,4 +1,4 @@
-config { type: "table", schema: "martech_silver" }
+config { type: "table", schema: "silver" }
 
 SELECT
   parse_date('%Y%m%d', event_date) AS data,

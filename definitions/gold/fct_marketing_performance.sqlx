@@ -1,6 +1,6 @@
 config { 
   type: "table", 
-  schema: "martech_gold",
+  schema: "gold",
   disabled: !data.enable_marketing 
 }
 

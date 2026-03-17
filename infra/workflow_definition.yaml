@@ -12,6 +12,8 @@ main:
             body:
                 gitCommitish: "main"
                 codeCompilationConfig:
+                    # ESTA LINHA ABAIXO RESOLVE O ERRO:
+                    defaultDatabase: "${project_id}" 
                     vars:
                         flavor: "${flavor}"
         result: compilation

@@ -1,4 +1,4 @@
-config { type: "table", schema: "martech_silver" }
+config { type: "table", schema: "silver" }
 
 SELECT
   _DATA_DATE AS data,
