@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Argumentos
+# Argumentos (1 a 13)
 GH_TOKEN=$1
 FLAVOR=${2:-"full"}
 RAW_GA4=${3:-"raw_ga4"}
@@ -16,16 +16,14 @@ TAB_GLD_RETAIL=${11:-"fct_retail_media_cube"}
 REGION=${12:-"us-east1"}
 SCHEDULE_CRON="${13:-0 6 * * *}"
 
-
 REPO_URL="https://github.com/Matheus-Fuzati-de-Carvalho/martech-toolkit-v8"
 PROJECT_ID=$(gcloud config get-value project)
 
-echo "🧬 Ajustando workflow_settings em infra/..."
-# O sed agora aponta para o caminho correto
+echo "🧬 Ajustando workflow_settings na raiz..."
 sed -i "s/defaultProject: .*/defaultProject: \"$PROJECT_ID\"/g" workflow_settings.yaml
 sed -i "s/defaultLocation: .*/defaultLocation: \"US\"/g" workflow_settings.yaml
 
-echo "🚀 Iniciando Deploy v8.1..."
+echo "🚀 Iniciando Deploy..."
 
 gcloud services enable secretmanager.googleapis.com \
                        cloudresourcemanager.googleapis.com \
@@ -52,5 +50,35 @@ terraform apply \
   -var="tab_slv_ads=$TAB_SLV_ADS" \
   -var="tab_gld_mkt=$TAB_GLD_MKT" \
   -var="tab_gld_retail=$TAB_GLD_RETAIL" \
-  -var="region=$REGION"\ -var="schedule_cron=$SCHEDULE_CRON" \
+  -var="region=$REGION" \
+  -var="schedule_cron=$SCHEDULE_CRON" \
   -auto-approve
+
+  # --- BLOCO DE OUTPUT FINAL ---
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+echo -e "\n${GREEN}${BOLD}✅ DEPLOY FINALIZADO COM SUCESSO!${NC}"
+echo "--------------------------------------------------------"
+echo -e "${BOLD}🚀 Toolkit Martech v8.1${NC}"
+echo -e "ID do Projeto:   ${CYAN}$PROJECT_ID${NC}"
+echo -e "Pacote (Flavor): ${CYAN}$FLAVOR${NC}"
+echo -e "Região Infra:    ${CYAN}$REGION${NC} (Repositório/Workflow)"
+echo -e "Local Dados:     ${CYAN}US${NC} (BigQuery)"
+echo "--------------------------------------------------------"
+echo -e "${BOLD}📁 Camadas de Dados:${NC}"
+echo -e "  - Silver Dataset: ${GREEN}$SILVER_DS${NC}"
+echo -e "  - Gold Dataset:   ${GREEN}$GOLD_DS${NC}"
+echo "--------------------------------------------------------"
+echo -e "${BOLD}🤖 Automação e Orquestração:${NC}"
+echo -e "  - Dataform Repo:  ${GREEN}toolkit-martech-v8${NC}"
+echo -e "  - Workflow:       ${GREEN}martech-v8-orchestrator${NC}"
+echo -e "  - Scheduler Job:  ${GREEN}daily-v8-sync${NC}"
+echo -e "  - Agendamento:    ${CYAN}\"$SCHEDULE_CRON\"${NC}"
+echo "--------------------------------------------------------"
+echo -e "${BOLD}🔗 Próximos Passos:${NC}"
+echo -e "1. Acesse o console do Dataform para validar a compilação."
+echo -e "2. O Cloud Scheduler já está ativo com o cron acima."
+echo "--------------------------------------------------------"

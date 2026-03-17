@@ -73,7 +73,7 @@ variable "tab_gld_retail" {
   description = "Nome da tabela gold retail media"
 }
 
-variable "schedule_cron" {
-  type    = "Expressão Cron para o agendamento do Cloud Scheduler"
+variable "schedule_cron" {type        = string
+  description = "Expressão Cron para o agendamento do Cloud Scheduler"
   default = "0 6 * * *"
 }
