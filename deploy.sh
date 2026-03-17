@@ -20,8 +20,8 @@ PROJECT_ID=$(gcloud config get-value project)
 
 echo "🧬 Ajustando workflow_settings em infra/..."
 # O sed agora aponta para o caminho correto
-sed -i "s/defaultProject: .*/defaultProject: \"$PROJECT_ID\"/g" infra/workflow_settings.yaml
-sed -i "s/defaultLocation: .*/defaultLocation: \"US\"/g" infra/workflow_settings.yaml
+sed -i "s/defaultProject: .*/defaultProject: \"$PROJECT_ID\"/g" workflow_settings.yaml
+sed -i "s/defaultLocation: .*/defaultLocation: \"US\"/g" workflow_settings.yaml
 
 echo "🚀 Iniciando Deploy v8.1..."
 
