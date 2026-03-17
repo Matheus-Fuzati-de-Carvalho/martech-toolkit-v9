@@ -1,5 +1,5 @@
 {
-  "defaultSchema": "martech_refined",
+  "defaultSchema": "martech_refined_default",
   "assertionSchema": "martech_assertions",
   "warehouse": "bigquery",
   "defaultDatabase": "ID_DO_PROJETO_SERA_INJETADO",
