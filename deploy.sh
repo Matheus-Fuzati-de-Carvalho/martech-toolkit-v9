@@ -14,7 +14,7 @@ TAB_SLV_ADS=${9:-"slv_ads_performance"}
 TAB_GLD_MKT=${10:-"fct_marketing_performance"}
 TAB_GLD_RETAIL=${11:-"fct_retail_media_cube"}
 REGION=${12:-"us-east1"}
-SCHEDULE_TIME=${13:-"0 6 * * *"} 
+SCHEDULE_CRON="${13:-0 6 * * *}"
 
 
 REPO_URL="https://github.com/Matheus-Fuzati-de-Carvalho/martech-toolkit-v8"
@@ -52,5 +52,5 @@ terraform apply \
   -var="tab_slv_ads=$TAB_SLV_ADS" \
   -var="tab_gld_mkt=$TAB_GLD_MKT" \
   -var="tab_gld_retail=$TAB_GLD_RETAIL" \
-  -var="region=$REGION" \
+  -var="region=$REGION"\ -var="schedule_cron=$SCHEDULE_CRON" \
   -auto-approve

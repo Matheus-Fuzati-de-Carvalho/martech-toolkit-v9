@@ -74,6 +74,6 @@ variable "tab_gld_retail" {
 }
 
 variable "schedule_cron" {
-  type    = string
+  type    = "Expressão Cron para o agendamento do Cloud Scheduler"
   default = "0 6 * * *"
 }

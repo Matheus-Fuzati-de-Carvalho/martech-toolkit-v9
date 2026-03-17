@@ -24,7 +24,7 @@ resource "google_workflows_workflow" "v8_flow" {
 
 # Job do Scheduler (mantenha como está)
 resource "google_cloud_scheduler_job" "trigger" {
-  name     = "daily-v8-sync"
+  name     = "schedule_v8"
   region   = var.region
   schedule = schedule_cron
   
