@@ -45,31 +45,34 @@ resource "time_sleep" "wait_for_iam" {
   create_duration = "90s"
 }
 
-# Automação do Workspace (Versão gcloud - Mais estável)
+# Automação do Workspace (Versão API REST - À prova de falhas do gcloud)
 resource "null_resource" "workspace_init" {
   provisioner "local-exec" {
     command = <<EOT
-      echo "⏳ Aguardando 60s para o Dataform estabilizar a conexão com o Git..."
+      echo "⏳ Aguardando 60s para estabilização total (IAM + Git)..."
       sleep 60
       
-      # Cria o workspace usando gcloud
-      gcloud dataform workspaces create main-workspace \
-        --repository=${google_dataform_repository.repo.name} \
-        --location=${var.region} \
-        --project=${var.project_id} || echo "⚠️ Workspace já pode existir."
+      TOKEN=$(gcloud auth print-access-token)
+      REPO_PATH="projects/${var.project_id}/locations/${var.region}/repositories/${google_dataform_repository.repo.name}"
+      
+      echo "🛠️ Criando Workspace 'main-workspace' via API..."
+      curl -s -X POST \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{}" \
+        "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces?workspaceId=main-workspace" || echo "⚠️ Workspace já existe."
 
-      echo "📥 Sincronizando arquivos (Git Pull)..."
-      gcloud dataform workspaces pull main-workspace \
-        --repository=${google_dataform_repository.repo.name} \
-        --location=${var.region} \
-        --project=${var.project_id}
+      echo "📥 Sincronizando arquivos (Git Pull) via API..."
+      curl -s -X POST \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{}" \
+        "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces/main-workspace:pull"
 EOT
   }
-  # Garante que as permissões e o repositório existam antes de tentar criar o workspace
   depends_on = [
     google_dataform_repository.repo, 
-    time_sleep.wait_for_iam,
-    google_project_iam_member.df_permissions
+    time_sleep.wait_for_iam
   ]
 }
 
