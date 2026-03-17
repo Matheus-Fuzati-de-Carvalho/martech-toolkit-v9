@@ -1,17 +1,3 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 4.44.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = ">= 4.44.0"
-    }
-  }
-}
-
 # 1. APIs
 resource "google_project_service" "apis" {
   for_each = toset([
