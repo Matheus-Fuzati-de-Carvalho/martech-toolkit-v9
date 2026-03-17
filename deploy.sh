@@ -34,8 +34,18 @@ gcloud secrets create dataform-github-token --replication-policy="automatic" --p
 echo -n "$GH_TOKEN" | gcloud secrets versions add dataform-github-token --data-file=- --project=$PROJECT_ID
 
 cd infra
-rm -rf .terraform* terraform.tfstate* .terraform.lock.hcl
+# REMOVIDO terraform.tfstate* daqui para manter a memória do deploy
+rm -rf .terraform .terraform.lock.hcl 
+
 terraform init -upgrade
+
+echo "🔍 Sincronizando estado (Check de Service Account)..."
+SA_EMAIL="martech-v8-orchestrator@$PROJECT_ID.iam.gserviceaccount.com"
+
+# Importa a SA caso o estado tenha sido perdido por algum motivo
+terraform import google_service_account.martech_sa projects/$PROJECT_ID/serviceAccounts/$SA_EMAIL || true
+
+echo "🚀 Rodando Terraform Apply..."
 terraform apply \
   -var="project_id=$PROJECT_ID" \
   -var="github_token=$GH_TOKEN" \
@@ -54,11 +64,11 @@ terraform apply \
   -var="schedule_cron=$SCHEDULE_CRON" \
   -auto-approve
 
-  # --- BLOCO DE OUTPUT FINAL ---
+# --- BLOCO DE OUTPUT FINAL ---
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "\n${GREEN}${BOLD}✅ DEPLOY FINALIZADO COM SUCESSO!${NC}"
 echo "--------------------------------------------------------"
