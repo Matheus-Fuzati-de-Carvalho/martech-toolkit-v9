@@ -3,16 +3,26 @@ resource "google_workflows_workflow" "v8_flow" {
   region          = var.region
   service_account = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
   
-  # CORREÇÃO DO NOME DO ARQUIVO AQUI:
   source_contents = templatefile("${path.module}/workflow_definition.yaml", {
-    project_id = var.project_id,
-    region     = var.region,
-    repo_name  = google_dataform_repository.repo.name,
-    flavor     = var.flavor
+    project_id      = var.project_id,
+    region          = var.region,
+    repo_name       = google_dataform_repository.repo.name,
+    flavor          = var.flavor,
+    raw_ga4         = var.raw_ga4,
+    raw_ads         = var.raw_ads,
+    raw_ads_table   = var.raw_ads_table,
+    silver_dataset  = var.silver_dataset,
+    gold_dataset    = var.gold_dataset,
+    tab_slv_ga4     = var.tab_slv_ga4,
+    tab_slv_ads     = var.tab_slv_ads,
+    tab_gld_mkt     = var.tab_gld_mkt,
+    tab_gld_retail  = var.tab_gld_retail
   })
+
+  depends_on = [google_dataform_repository.repo]
 }
 
-# RENOMEIE DE v8_scheduler PARA trigger:
+# Job do Scheduler (mantenha como está)
 resource "google_cloud_scheduler_job" "trigger" {
   name     = "daily-v8-sync"
   region   = var.region
