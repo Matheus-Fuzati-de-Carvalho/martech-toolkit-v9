@@ -45,21 +45,32 @@ resource "time_sleep" "wait_for_iam" {
   create_duration = "90s"
 }
 
-# Automação do Workspace (Root Level)
+# Automação do Workspace (Versão gcloud - Mais estável)
 resource "null_resource" "workspace_init" {
   provisioner "local-exec" {
     command = <<EOT
-      TOKEN=$(gcloud auth print-access-token)
-      REPO_PATH="projects/${var.project_id}/locations/${var.region}/repositories/${google_dataform_repository.repo.name}"
-      echo "⏳ Aguardando estabilização do Git..."
-      sleep 40
-      curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-           "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces?workspaceId=main-workspace" || true
-      curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-           "https://dataform.googleapis.com/v1beta1/$REPO_PATH/workspaces/main-workspace:pull"
+      echo "⏳ Aguardando 60s para o Dataform estabilizar a conexão com o Git..."
+      sleep 60
+      
+      # Cria o workspace usando gcloud
+      gcloud dataform workspaces create main-workspace \
+        --repository=${google_dataform_repository.repo.name} \
+        --location=${var.region} \
+        --project=${var.project_id} || echo "⚠️ Workspace já pode existir."
+
+      echo "📥 Sincronizando arquivos (Git Pull)..."
+      gcloud dataform workspaces pull main-workspace \
+        --repository=${google_dataform_repository.repo.name} \
+        --location=${var.region} \
+        --project=${var.project_id}
 EOT
   }
-  depends_on = [google_dataform_repository.repo, time_sleep.wait_for_iam]
+  # Garante que as permissões e o repositório existam antes de tentar criar o workspace
+  depends_on = [
+    google_dataform_repository.repo, 
+    time_sleep.wait_for_iam,
+    google_project_iam_member.df_permissions
+  ]
 }
 
 # Criação dos Datasets (Com depends_on para evitar erro de API)
