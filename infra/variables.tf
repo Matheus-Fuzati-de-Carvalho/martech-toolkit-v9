@@ -72,3 +72,8 @@ variable "tab_gld_retail" {
   type        = string
   description = "Nome da tabela gold retail media"
 }
+
+variable "schedule_cron" {
+  type    = string
+  default = "0 6 * * *"
+}

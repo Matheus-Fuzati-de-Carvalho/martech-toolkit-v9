@@ -26,7 +26,7 @@ resource "google_workflows_workflow" "v8_flow" {
 resource "google_cloud_scheduler_job" "trigger" {
   name     = "daily-v8-sync"
   region   = var.region
-  schedule = "0 6 * * *"
+  schedule = schedule_cron
   
   http_target {
     http_method = "POST"

@@ -13,7 +13,9 @@ TAB_SLV_GA4=${8:-"slv_ga4_events"}
 TAB_SLV_ADS=${9:-"slv_ads_performance"}
 TAB_GLD_MKT=${10:-"fct_marketing_performance"}
 TAB_GLD_RETAIL=${11:-"fct_retail_media_cube"}
-REGION=${12:-"us-east1"} # Regional para Infra (Repo/Workflow)
+REGION=${12:-"us-east1"}
+SCHEDULE_TIME=${13:-"0 6 * * *"} 
+
 
 REPO_URL="https://github.com/Matheus-Fuzati-de-Carvalho/martech-toolkit-v8"
 PROJECT_ID=$(gcloud config get-value project)
