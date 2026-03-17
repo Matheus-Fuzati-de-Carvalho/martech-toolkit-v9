@@ -12,10 +12,18 @@ main:
             body:
                 gitCommitish: "main"
                 codeCompilationConfig:
-                    # ISSO RESOLVE O ERRO DE INVALID PROJECT ID:
                     defaultDatabase: "${project_id}"
                     vars:
                         flavor: "${flavor}"
+                        raw_ga4: "${raw_ga4}"
+                        raw_ads: "${raw_ads}"
+                        raw_ads_table: "${raw_ads_table}"
+                        silver_schema: "${silver_dataset}"
+                        gold_schema: "${gold_dataset}"
+                        tab_slv_ga4: "${tab_slv_ga4}"
+                        tab_slv_ads: "${tab_slv_ads}"
+                        tab_gld_mkt: "${tab_gld_mkt}"
+                        tab_gld_retail: "${tab_gld_retail}"
         result: compilation
     - execute:
         call: http.post
