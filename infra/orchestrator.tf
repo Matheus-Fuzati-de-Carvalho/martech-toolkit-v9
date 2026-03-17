@@ -27,6 +27,7 @@ resource "google_cloud_scheduler_job" "trigger" {
   name     = "schedule_v8"
   region   = var.region
   schedule = schedule_cron
+  time_zone = "America/Sao_Paulo"
   
   http_target {
     http_method = "POST"
