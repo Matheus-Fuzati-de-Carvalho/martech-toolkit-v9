@@ -26,7 +26,7 @@ resource "google_workflows_workflow" "v8_flow" {
 resource "google_cloud_scheduler_job" "trigger" {
   name     = "schedule_v8"
   region   = var.region
-  schedule = schedule_cron
+  schedule = var.schedule_cron
   time_zone = "America/Sao_Paulo"
   
   http_target {
