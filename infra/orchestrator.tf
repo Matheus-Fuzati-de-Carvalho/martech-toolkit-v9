@@ -1,12 +1,13 @@
+# Recurso do Workflow
 resource "google_workflows_workflow" "v8_flow" {
   name            = "martech-v8-orchestrator"
   region          = var.region
-  service_account = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+  service_account = google_service_account.martech_sa.id # Agora usa a conta certa
   
   source_contents = templatefile("${path.module}/workflow_definition.yaml", {
     project_id      = var.project_id,
     region          = var.region,
-    repo_name       = google_dataform_repository.repo.name,
+    repo_name       = "toolkit-martech-v8",
     flavor          = var.flavor,
     raw_ga4         = var.raw_ga4,
     raw_ads         = var.raw_ads,
@@ -19,21 +20,21 @@ resource "google_workflows_workflow" "v8_flow" {
     tab_gld_retail  = var.tab_gld_retail
   })
 
-  depends_on = [google_dataform_repository.repo]
+  depends_on = [time_sleep.wait_for_iam]
 }
 
-# Job do Scheduler (mantenha como está)
+# Job do Scheduler (Unificado e Corrigido)
 resource "google_cloud_scheduler_job" "trigger" {
-  name     = "schedule_v8"
-  region   = var.region
-  schedule = var.schedule_cron
+  name      = "daily-v8-sync" # Nome único
+  region    = var.region
+  schedule  = var.schedule_cron
   time_zone = "America/Sao_Paulo"
   
   http_target {
     http_method = "POST"
     uri         = "https://workflowexecutions.googleapis.com/v1/${google_workflows_workflow.v8_flow.id}/executions"
     oauth_token {
-      service_account_email = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+      service_account_email = google_service_account.martech_sa.email # Usa a conta dedicada
     }
   }
 }
