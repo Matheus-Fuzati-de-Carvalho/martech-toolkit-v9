@@ -59,13 +59,19 @@ main:
 
         # Se houver erro ou falha de Assertion, o Workflow "cai" aqui
         except:
-          as: e
-          steps:
-            - publish_to_pubsub:
-                call: googleapis.pubsub.v1.projects.topics.publish
-                args:
-                  topic: "projects/${project_id}/topics/martech-v9-alerts"
-                  body:
-                    messages:
-                      - data: $${base64.encode(json.encode_to_string({"error_message":e.message, "flavor":flavor}))}
+            as: e
+            steps:
+              - prepare_error_msg:
+                  assign:
+                    - error_details:
+                        message: ${e.message}
+                        code: ${e.code}
+                        flavor: "${flavor}" # Variável injetada pelo Terraform
+              - publish_to_pubsub:
+                  call: googleapis.pubsub.v1.projects.topics.publish
+                  args:
+                    topic: "projects/${project_id}/topics/martech-v9-alerts"
+                    body:
+                      messages:
+                        - data: ${base64.encode(json.encode_to_string(error_details))}
                       
