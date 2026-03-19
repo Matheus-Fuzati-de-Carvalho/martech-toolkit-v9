@@ -23,5 +23,5 @@ resource "google_cloud_scheduler_job" "workflow_trigger" {
     body = base64encode("{}")
   }
 
-  depends_on = [google_workflows_workflow.dataform_orchestrator]
+  depends_on = [time_sleep.wait_api_propagation]
 }
