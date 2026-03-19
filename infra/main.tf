@@ -22,10 +22,17 @@ resource "google_project_service" "services" {
     "workflows.googleapis.com",
     "dataplex.googleapis.com",
     "cloudfunctions.googleapis.com",
+    "secretmanager.googleapis.com",
+    "iam.googleapis.com",
     "pubsub.googleapis.com"
   ])
   service = each.key
   disable_on_destroy = false
+}
+
+resource "time_sleep" "wait_api_propagation" {
+  create_duration = "30s"
+  depends_on      = [google_project_service.services]
 }
 
 # 3. Criação dos Datasets no BigQuery
