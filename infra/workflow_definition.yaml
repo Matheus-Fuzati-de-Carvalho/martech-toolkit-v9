@@ -4,7 +4,7 @@ main:
   steps:
     - init:
         assign:
-          - repository: "projects/${project_id}/locations/${region}/repositories/${repository_name}"
+          - repository: "projects/${project_id}/locations/${region}/repositories/${repository}"
     
     - compile_dataform:
         call: http.post
