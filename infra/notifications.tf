@@ -51,6 +51,8 @@ resource "google_cloudfunctions2_function" "email_notifier" {
 
   depends_on = [
     time_sleep.wait_api_propagation,
+    google_project_service.services, # Adicionei este aqui para reforçar
+    google_pubsub_topic.pipeline_alerts,
     google_storage_bucket_object.function_source
   ]
 }
