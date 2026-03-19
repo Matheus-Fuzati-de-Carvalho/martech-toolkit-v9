@@ -50,12 +50,6 @@ REPO_NAME_SHORT=$(terraform output -raw dataform_repository_id | awk -F/ '{print
 echo "⏳ Aguardando 30s para propagação de APIs..."
 sleep 30
 
-# 4. Sincronização do Git (Corrigido com 'beta')
-echo "🔄 Sincronizando repositório com o Git..."
-gcloud beta dataform repositories fetch-remote-branches "$REPO_NAME_SHORT" \
-    --project="$CURRENT_PROJECT" \
-    --location="$SERVICE_REGION" || echo "⚠️ Sincronização falhou, mas seguindo..."
-
 # 5. Criação do Workspace via API (Corrigido com SERVICE_REGION)
 echo "🏗️ Criando Workspace de desenvolvimento..."
 ACCESS_TOKEN=$(gcloud auth print-access-token)
