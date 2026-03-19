@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# ==============================================================================
-# MARTECH TOOLKIT V9 - ONE TOUCH DEPLOYER (Legacy Parameter Style)
-# ==============================================================================
-
 set -e
 
-# Captura de Parâmetros Posicionais (Padrão v8)
+# 1. Captura de Parâmetros (Sincronizado com o HCL)
 GIT_TOKEN=$1
 FLAVOR=${2:-"full"}
 RAW_GA4_DATASET=${3:-"RAW_SRC_GA4"}
@@ -18,28 +14,17 @@ TAB_FT_GA4=${8:-"FT_SIL_GA4_EVENTS"}
 TAB_FT_ADS=${9:-"FT_SIL_ADS_PERFORMANCE"}
 TAB_DM_MKT=${10:-"DM_GOLD_MARKETING_PERFORMANCE"}
 TAB_DM_RETAIL=${11:-"DM_GOLD_RETAIL_CUBE"}
-SERVICE_REGION=${12}  # Novo: us-central1
-DATA_LOCATION=${13}   # Novo: US
-NOTIFICATION_EMAIL=${14} # Adicionado para v9
-
-# Validação Inicial
-if [ -z "$GIT_TOKEN" ]; then
-    echo "❌ Erro: O GIT_TOKEN (Parâmetro 1) é obrigatório."
-    exit 1
-fi
+SERVICE_REGION=${12:-"us-central1"}
+DATA_LOCATION=${13:-"US"}
+NOTIFICATION_EMAIL=${14}
 
 echo "--------------------------------------------------------"
-echo "🛠️ Preparando Ambiente Virgem no GCP..."
+echo "🚀 Iniciando Deploy Martech v9 (Infra Only)"
 echo "--------------------------------------------------------"
 
-# 1. Ativação de API Crítica para o Terraform
-gcloud services enable cloudresourcemanager.googleapis.com
-
-# 2. Configuração do Terraform
+# 2. Terraform Apply
 cd infra/
 terraform init -reconfigure
-
-echo "🏗️ Aplicando Infraestrutura v9 (APIs, BQ, Workflows, Dataplex)..."
 
 terraform apply -auto-approve \
   -var="git_token=$GIT_TOKEN" \
@@ -57,44 +42,38 @@ terraform apply -auto-approve \
   -var="data_location=$DATA_LOCATION" \
   -var="notification_email=$NOTIFICATION_EMAIL"
 
-# 3. Tratamento de Latência (Garantindo que o IAM propague)
-echo "⏳ Aguardando 60 segundos para propagação de permissões..."
-sleep 60
-
-# 4. Sincronização do Dataform
+# 3. Captura de variáveis do output do Terraform
 CURRENT_PROJECT=$(gcloud config get-value project)
-REPO_NAME=$(terraform output -raw dataform_repository_id)
+# Extrai apenas o nome final do repositório (ex: martech-toolkit-v9) do ID completo
+REPO_NAME_SHORT=$(terraform output -raw dataform_repository_id | awk -F/ '{print $NF}')
 
+echo "⏳ Aguardando 30s para propagação de APIs..."
+sleep 30
+
+# 4. Sincronização do Git (Corrigido com 'beta')
 echo "🔄 Sincronizando repositório com o Git..."
-gcloud dataform repositories fetch-remote-branches "$REPO_NAME" \
+gcloud beta dataform repositories fetch-remote-branches "$REPO_NAME_SHORT" \
     --project="$CURRENT_PROJECT" \
-    --location="$SERVICE_REGION" || true
+    --location="$SERVICE_REGION" || echo "⚠️ Sincronização falhou, mas seguindo..."
 
-# 5. Execução de Teste do Orquestrador
-echo "🚦 Disparando Workflow de teste..."
-WORKFLOW_NAME=$(terraform output -raw workflow_name)
-gcloud workflows run "$WORKFLOW_NAME" --project="$CURRENT_PROJECT" --location="$SERVICE_REGION"
-
-echo "🏗️ Configurando Workspace de desenvolvimento via API..."
-
-# Captura o token de acesso atual
+# 5. Criação do Workspace via API (Corrigido com SERVICE_REGION)
+echo "🏗️ Criando Workspace de desenvolvimento..."
 ACCESS_TOKEN=$(gcloud auth print-access-token)
-WORKSPACE_ID="dev-workspace"
 
-# Chamada via CURL (O método infalível para Dataform v1beta1)
-# O '-s' silencia o progresso e o '-o /dev/null' descarta a resposta gigante, mantendo o foco no status
+# Usamos o 'curl' para evitar dependência de versão do gcloud
 RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
     -H "Authorization: Bearer ${ACCESS_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{}' \
-    "https://dataform.googleapis.com/v1beta1/projects/${PROJECT_ID}/locations/${SERVICE_REGION}/repositories/martech-toolkit-v9/workspaces?workspaceId=${WORKSPACE_ID}")
+    "https://dataform.googleapis.com/v1beta1/projects/${CURRENT_PROJECT}/locations/${SERVICE_REGION}/repositories/${REPO_NAME_SHORT}/workspaces?workspaceId=dev-workspace")
 
-if [ "$RESPONSE_CODE" == "200" ]; then
-    echo "✅ Workspace '${WORKSPACE_ID}' criado com sucesso."
-elif [ "$RESPONSE_CODE" == "409" ]; then
-    echo "ℹ️ Workspace '${WORKSPACE_ID}' já existe. Seguindo..."
+if [ "$RESPONSE_CODE" == "200" ] || [ "$RESPONSE_CODE" == "409" ]; then
+    echo "✅ Workspace pronto (Status: $RESPONSE_CODE)."
 else
-    echo "⚠️ Aviso: A API retornou status ${RESPONSE_CODE}. Verifique no console do Dataform."
+    echo "⚠️ Aviso: Workspace não pôde ser criado (Status: $RESPONSE_CODE)."
 fi
 
-echo "🚀 DEPLOY DA INFRAESTRUTURA V9 FINALIZADO!"
+echo "--------------------------------------------------------"
+echo "🏁 DEPLOY V9 FINALIZADO!"
+echo "💡 O Workflow não foi executado. Você pode iniciá-lo manualmente no console."
+echo "--------------------------------------------------------"
