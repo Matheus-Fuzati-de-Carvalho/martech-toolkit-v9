@@ -20,7 +20,7 @@ TAB_DM_MKT=${10:-"DM_GOLD_MARKETING_PERFORMANCE"}
 TAB_DM_RETAIL=${11:-"DM_GOLD_RETAIL_CUBE"}
 SERVICE_REGION=${12}  # Novo: us-central1
 DATA_LOCATION=${13}   # Novo: US
-NOTIFICATION_EMAIL=${14}# Adicionado para v9
+NOTIFICATION_EMAIL=${14} # Adicionado para v9
 
 # Validação Inicial
 if [ -z "$GIT_TOKEN" ]; then
