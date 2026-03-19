@@ -8,15 +8,18 @@ resource "google_dataplex_lake" "martech_lake" {
   display_name = "Martech Toolkit v9 Governance"
 }
 
-# 2. Criação das Zonas Lógicas (Sem custo fixo alto)
 resource "google_dataplex_zone" "trusted_zone" {
   name         = "trusted-zone"
   lake         = google_dataplex_lake.martech_lake.name
   project      = local.project_id
   location     = var.region
-  type         = "RAW" # RAW no Dataplex aceita datasets do BQ sem transformação
+  type         = "RAW"
+  resource_spec {
+    location_type = "SINGLE_REGION" # Ou "MULTI_REGION" se a sua var.region for "US" ou "EU"
+  }
+
   discovery_spec {
-    enabled = false # Mantemos desativado para evitar custos de scan automático
+    enabled = false
   }
 }
 
@@ -26,6 +29,10 @@ resource "google_dataplex_zone" "refined_zone" {
   project      = local.project_id
   location     = var.region
   type         = "CURATED"
+  resource_spec {
+    location_type = "SINGLE_REGION" 
+  }
+
   discovery_spec {
     enabled = false
   }
