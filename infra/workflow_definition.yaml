@@ -1,15 +1,15 @@
-# infra/workflow_definition.yaml
 main:
   params: [args]
   steps:
     - init:
         assign:
+          # Variáveis injetadas pelo Terraform (Cifrão Simples)
           - repository: "projects/${project_id}/locations/${region}/repositories/${repository}"
-    
+
     - compile_dataform:
         call: http.post
         args:
-          url: "https://dataform.googleapis.com/v1beta1/${repository}/compilationResults"
+          url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
           auth:
             type: OAuth2
           body:
@@ -32,10 +32,10 @@ main:
                   body:
                     compilationResult: $${compilation_result.body.name}
                     invocationConfig:
-                      includedTags: ["${flavor}"] # Filtra pelo sabor (marketing, retail, full)
+                      includedTags: ["${flavor}"]
                       transitiveDependenciesIncluded: true
                 result: invocation
-            
+
             - wait_for_completion:
                 call: http.get
                 args:
@@ -43,7 +43,7 @@ main:
                   auth:
                     type: OAuth2
                 result: invocation_status
-            
+
             - check_status:
                 switch:
                   - condition: $${invocation_status.body.state == "RUNNING"}
@@ -59,21 +59,20 @@ main:
 
         # Se houver erro ou falha de Assertion, o Workflow "cai" aqui
         except:
-            as: e
-            steps:
-              - prepare_error_data:
-                  assign:
-                    - error_payload:
-                        # Use $${ para o que for do Workflow e ${ para o que for do Terraform
-                        message: $${e.message} 
-                        flavor: "${flavor}"
-                        project: "${project_id}"
-              - publish_to_pubsub:
-                  call: googleapis.pubsub.v1.projects.topics.publish
-                  args:
-                    topic: "projects/${project_id}/topics/martech-v9-alerts"
-                    body:
-                      messages:
-                        # NOTA: Aqui usamos $${ para o Terraform não tentar processar
-                        - data: $${base64.encode(json.encode_to_string(error_payload))}
-                      
+          as: e
+          steps:
+            - prepare_error_data:
+                assign:
+                  - error_payload:
+                      # Variáveis exclusivas do Workflow usam Cifrão Duplo ($$)
+                      message: $${e.message} 
+                      # Variáveis do Terraform usam Cifrão Simples ($)
+                      flavor: "${flavor}"
+                      project: "${project_id}"
+            - publish_to_pubsub:
+                call: googleapis.pubsub.v1.projects.topics.publish
+                args:
+                  topic: "projects/${project_id}/topics/martech-v9-alerts"
+                  body:
+                    messages:
+                      - data: $${base64.encode(json.encode_to_string(error_payload))}
