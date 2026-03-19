@@ -18,7 +18,7 @@ resource "google_project_iam_member" "workflow_dataform_editor" {
 # 3. O recurso do Workflow
 resource "google_workflows_workflow" "dataform_orchestrator" {
   name            = "martech-v9-orchestrator"
-  service_region          = var.service_region
+  region          = var.service_region
   service_account = google_service_account.workflow_sa.id
   project         = local.project_id
 
