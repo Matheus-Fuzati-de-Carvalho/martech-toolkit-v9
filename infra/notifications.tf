@@ -32,11 +32,6 @@ resource "google_cloudfunctions2_function" "email_notifier" {
       }
     }
   }
-  depends_on = [
-    time_sleep.wait_api_propagation,
-    google_storage_bucket_object.function_source
-  ]
-}
 
   service_config {
     max_instance_count = 1
@@ -53,6 +48,11 @@ resource "google_cloudfunctions2_function" "email_notifier" {
     pubsub_topic   = google_pubsub_topic.pipeline_alerts.id
     retry_policy   = "RETRY_POLICY_DO_NOT_RETRY"
   }
+
+  depends_on = [
+    time_sleep.wait_api_propagation,
+    google_storage_bucket_object.function_source
+  ]
 }
 
 # 4. Bucket para a Função
