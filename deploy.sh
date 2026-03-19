@@ -18,8 +18,9 @@ TAB_FT_GA4=${8:-"FT_SIL_GA4_EVENTS"}
 TAB_FT_ADS=${9:-"FT_SIL_ADS_PERFORMANCE"}
 TAB_DM_MKT=${10:-"DM_GOLD_MARKETING_PERFORMANCE"}
 TAB_DM_RETAIL=${11:-"DM_GOLD_RETAIL_CUBE"}
-REGION=${12:-"US"}
-NOTIFICATION_EMAIL=${13:-"seu-email-padrao@dominio.com"} # Adicionado para v9
+SERVICE_REGION=${12}  # Novo: us-central1
+DATA_LOCATION=${13}   # Novo: US
+NOTIFICATION_EMAIL=${14}# Adicionado para v9
 
 # Validação Inicial
 if [ -z "$GIT_TOKEN" ]; then
@@ -52,7 +53,8 @@ terraform apply -auto-approve \
   -var="tab_ft_ads=$TAB_FT_ADS" \
   -var="tab_dm_mkt=$TAB_DM_MKT" \
   -var="tab_dm_retail=$TAB_DM_RETAIL" \
-  -var="region=$REGION" \
+  -var="service_region=$SERVICE_REGION" \
+  -var="data_location=$DATA_LOCATION" \
   -var="notification_email=$NOTIFICATION_EMAIL"
 
 # 3. Tratamento de Latência (Garantindo que o IAM propague)
@@ -66,12 +68,12 @@ REPO_NAME=$(terraform output -raw dataform_repository_id)
 echo "🔄 Sincronizando repositório com o Git..."
 gcloud dataform repositories fetch-remote-branches "$REPO_NAME" \
     --project="$CURRENT_PROJECT" \
-    --location="$REGION" || true
+    --location="$SERVICE_REGION" || true
 
 # 5. Execução de Teste do Orquestrador
 echo "🚦 Disparando Workflow de teste..."
 WORKFLOW_NAME=$(terraform output -raw workflow_name)
-gcloud workflows run "$WORKFLOW_NAME" --project="$CURRENT_PROJECT" --location="$REGION"
+gcloud workflows run "$WORKFLOW_NAME" --project="$CURRENT_PROJECT" --location="$SERVICE_REGION"
 
 echo "🏗️ Configurando Workspace de desenvolvimento via API..."
 
@@ -85,7 +87,7 @@ RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
     -H "Authorization: Bearer ${ACCESS_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{}' \
-    "https://dataform.googleapis.com/v1beta1/projects/${PROJECT_ID}/locations/${REGION}/repositories/martech-toolkit-v9/workspaces?workspaceId=${WORKSPACE_ID}")
+    "https://dataform.googleapis.com/v1beta1/projects/${PROJECT_ID}/locations/${SERVICE_REGION}/repositories/martech-toolkit-v9/workspaces?workspaceId=${WORKSPACE_ID}")
 
 if [ "$RESPONSE_CODE" == "200" ]; then
     echo "✅ Workspace '${WORKSPACE_ID}' criado com sucesso."

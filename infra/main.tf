@@ -45,7 +45,7 @@ resource "time_sleep" "wait_api_propagation" {
 resource "google_bigquery_dataset" "datasets" {
   for_each = toset(local.datasets)
   dataset_id = each.key
-  location   = var.region
+  location   = var.data_location
   project    = local.project_id
 
   labels = {

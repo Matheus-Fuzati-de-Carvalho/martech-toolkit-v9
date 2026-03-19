@@ -8,12 +8,12 @@ resource "google_cloud_scheduler_job" "workflow_trigger" {
   time_zone        = "America/Sao_Paulo"
   attempt_deadline = "320s"
   project          = local.project_id
-  region           = var.region
+  region           = var.service_region
 
   # O Scheduler chama a API de execução do Workflow
   http_target {
     http_method = "POST"
-    uri         = "https://workflowexecutions.googleapis.com/v1/projects/${local.project_id}/locations/${var.region}/workflows/${google_workflows_workflow.dataform_orchestrator.name}/executions"
+    uri         = "https://workflowexecutions.googleapis.com/v1/projects/${local.project_id}/locations/${var.service_region}/workflows/${google_workflows_workflow.dataform_orchestrator.name}/executions"
     
     oauth_token {
       service_account_email = google_service_account.workflow_sa.email

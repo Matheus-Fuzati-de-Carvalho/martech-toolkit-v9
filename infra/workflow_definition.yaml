@@ -4,7 +4,7 @@ main:
     - init:
         assign:
           # Variável injetada pelo Terraform ($)
-          - repository: "projects/${project_id}/locations/${region}/repositories/${repository}"
+          - repository: "projects/${project_id}/locations/${service_region}/repositories/${repository}"
 
     - compile_dataform:
         call: http.post

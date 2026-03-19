@@ -9,9 +9,16 @@ variable "project_id" {
   default     = ""
 }
 
-variable "region" {
-  type    = string
-  default = "US"
+variable "service_region" {
+  description = "Região para serviços (Functions, Workflows, Scheduler)"
+  type        = string
+  default     = "us-central1"
+}
+
+variable "data_location" {
+  description = "Localização para dados (BigQuery, Dataplex Assets)"
+  type        = string
+  default     = "US"
 }
 
 variable "git_token" {

@@ -4,7 +4,7 @@
 resource "google_dataplex_lake" "martech_lake" {
   name         = "martech-toolkit-lake"
   project      = local.project_id
-  location     = var.region
+  location     = var.service_region
   display_name = "Martech Toolkit v9 Governance"
   
   # Garante que as APIs estejam prontas antes de criar o Lake
@@ -16,11 +16,11 @@ resource "google_dataplex_zone" "trusted_zone" {
   name     = "trusted-zone"
   lake     = google_dataplex_lake.martech_lake.name
   project  = local.project_id
-  location = var.region
+  location = var.service_region
   type     = "CURATED"
 
   resource_spec {
-    location_type = "SINGLE_REGION" # Mude para MULTI_REGION se var.region for "US"
+    location_type = "MULTI_REGION" # Mude para MULTI_REGION se var.service_region for "US"
   }
 
   discovery_spec {
@@ -32,11 +32,11 @@ resource "google_dataplex_zone" "refined_zone" {
   name     = "refined-zone"
   lake     = google_dataplex_lake.martech_lake.name
   project  = local.project_id
-  location = var.region
+  location = var.service_region
   type     = "CURATED"
 
   resource_spec {
-    location_type = "SINGLE_REGION"
+    location_type = "MULTI_REGION"
   }
 
   discovery_spec {
@@ -52,7 +52,7 @@ resource "google_dataplex_asset" "silver_asset" {
   lake          = google_dataplex_lake.martech_lake.name
   dataplex_zone = google_dataplex_zone.trusted_zone.name
   project       = local.project_id
-  location      = var.region
+  location      = var.service_region
 
   resource_spec {
     name = "projects/${local.project_id}/datasets/${var.silver_schema}"
@@ -70,7 +70,7 @@ resource "google_dataplex_asset" "refined_asset" {
   lake          = google_dataplex_lake.martech_lake.name
   dataplex_zone = google_dataplex_zone.refined_zone.name
   project       = local.project_id
-  location      = var.region
+  location      = var.service_region
 
   resource_spec {
     name = "projects/${local.project_id}/datasets/${var.refined_schema}"
