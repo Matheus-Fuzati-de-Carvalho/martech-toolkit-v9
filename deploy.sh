@@ -73,13 +73,26 @@ echo "🚦 Disparando Workflow de teste..."
 WORKFLOW_NAME=$(terraform output -raw workflow_name)
 gcloud workflows run "$WORKFLOW_NAME" --project="$CURRENT_PROJECT" --location="$REGION"
 
-echo "🏗️ Criando Workspace de desenvolvimento no Dataform..."
-gcloud dataform workspaces create dev-workspace \
-    --repository=martech-toolkit-v9 \
-    --location=$REGION \
-    --project=$PROJECT_ID \
-    --quiet || echo "⚠️ Workspace já existe ou houve um erro leve."
+echo "🏗️ Configurando Workspace de desenvolvimento via API..."
 
-echo "--------------------------------------------------------"
-echo "✅ DEPLOY v9 FINALIZADO COM SUCESSO!"
-echo "--------------------------------------------------------"
+# Captura o token de acesso atual
+ACCESS_TOKEN=$(gcloud auth print-access-token)
+WORKSPACE_ID="dev-workspace"
+
+# Chamada via CURL (O método infalível para Dataform v1beta1)
+# O '-s' silencia o progresso e o '-o /dev/null' descarta a resposta gigante, mantendo o foco no status
+RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+    -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{}' \
+    "https://dataform.googleapis.com/v1beta1/projects/${PROJECT_ID}/locations/${REGION}/repositories/martech-toolkit-v9/workspaces?workspaceId=${WORKSPACE_ID}")
+
+if [ "$RESPONSE_CODE" == "200" ]; then
+    echo "✅ Workspace '${WORKSPACE_ID}' criado com sucesso."
+elif [ "$RESPONSE_CODE" == "409" ]; then
+    echo "ℹ️ Workspace '${WORKSPACE_ID}' já existe. Seguindo..."
+else
+    echo "⚠️ Aviso: A API retornou status ${RESPONSE_CODE}. Verifique no console do Dataform."
+fi
+
+echo "🚀 DEPLOY DA INFRAESTRUTURA V9 FINALIZADO!"
