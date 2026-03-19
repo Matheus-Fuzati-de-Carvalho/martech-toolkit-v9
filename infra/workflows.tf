@@ -5,6 +5,7 @@ resource "google_service_account" "workflow_sa" {
   account_id   = "martech-v9-workflow-sa"
   display_name = "Workflow Service Account - Martech Toolkit v9"
   project      = local.project_id
+  depends_on = [time_sleep.wait_api_propagation]
 }
 
 # 2. Permissões para o Workflow controlar o Dataform

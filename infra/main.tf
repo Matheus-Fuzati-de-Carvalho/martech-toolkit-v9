@@ -24,14 +24,17 @@ resource "google_project_service" "services" {
     "cloudfunctions.googleapis.com",
     "secretmanager.googleapis.com",
     "iam.googleapis.com",
-    "pubsub.googleapis.com"
+    "pubsub.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "artifactregistry.googleapis.com"
   ])
   service = each.key
   disable_on_destroy = false
 }
 
 resource "time_sleep" "wait_api_propagation" {
-  create_duration = "30s"
+  create_duration = "60s"
   depends_on      = [google_project_service.services]
 }
 
