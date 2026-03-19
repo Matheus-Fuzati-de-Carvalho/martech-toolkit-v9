@@ -55,6 +55,7 @@ resource "google_project_iam_member" "dataform_metadata_viewer" {
 }
 
 resource "google_dataform_repository_workspace" "default_workspace" {
+  provider   = google-beta
   project    = local.project_id
   location   = var.region
   repository = google_dataform_repository.martech_v9_repo.name

@@ -61,17 +61,19 @@ main:
         except:
             as: e
             steps:
-              - prepare_error_msg:
+              - prepare_error_data:
                   assign:
-                    - error_details:
-                        message: ${e.message}
-                        code: ${e.code}
-                        flavor: "${flavor}" # Variável injetada pelo Terraform
+                    - error_payload:
+                        # Use $${ para o que for do Workflow e ${ para o que for do Terraform
+                        message: $${e.message} 
+                        flavor: "${flavor}"
+                        project: "${project_id}"
               - publish_to_pubsub:
                   call: googleapis.pubsub.v1.projects.topics.publish
                   args:
                     topic: "projects/${project_id}/topics/martech-v9-alerts"
                     body:
                       messages:
-                        - data: ${base64.encode(json.encode_to_string(error_details))}
+                        # NOTA: Aqui usamos $${ para o Terraform não tentar processar
+                        - data: $${base64.encode(json.encode_to_string(error_payload))}
                       
