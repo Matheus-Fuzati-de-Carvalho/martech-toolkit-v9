@@ -17,8 +17,8 @@ vars:
   
   # Fontes de Dados (Raw)
   # O projeto será injetado dinamicamente via Compilation Overrides no Terraform
-  raw_ga4_dataset: "RAW_SRC_GA4"
-  raw_ads_dataset: "RAW_SRC_ADS"
+  raw_ga4_dataset: "RAW_SRC_GA4_EXTERNAL"
+  raw_ads_dataset: "RAW_SRC_ADS_EXTERNAL"
   raw_ads_table: "ad_CampaignBasicStats_987654321"
   
   # Parâmetros de Motor
