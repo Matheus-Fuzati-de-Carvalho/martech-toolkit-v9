@@ -9,7 +9,7 @@ config {
             "event_timestamp > 0"
         ]
     },
-    description: "Trusted Layer: Eventos GA4 consolidados (Daily + Intraday).",
+    description: "Trusted Layer: Eventos GA4 consolidados (Daily + Intraday) com priorização.",
     tags: ["silver", "ga4", "trusted"],
     bigquery: {
         partitionBy: "event_date",
@@ -18,47 +18,36 @@ config {
 }
 
 WITH all_sources AS (
-    -- TABELA DAILY FIXA (PROTÓTIPO)
+    -- TABELA DAILY (Prioridade 1)
     SELECT
         parse_date('%Y%m%d', event_date) AS event_date,
         event_timestamp,
         event_name,
         user_pseudo_id,
         (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS ga_session_id,
-        'DAILY' AS source_priority,
+        1 AS source_priority, -- Menor número = maior prioridade
         CURRENT_TIMESTAMP() AS atualization_date
     FROM
         `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_20260310`
-    
-    /* PRODUÇÃO DINÂMICA
-    FROM `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_*`
-    WHERE _TABLE_SUFFIX BETWEEN 
-    FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL ${data.lookback_days} DAY)) 
-    AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
-    */
 
     UNION ALL
 
-    -- TABELA INTRADAY FIXA (PROTÓTIPO)
+    -- TABELA INTRADAY (Prioridade 2)
     SELECT
         parse_date('%Y%m%d', event_date) AS event_date,
         event_timestamp,
         event_name,
         user_pseudo_id,
         (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS ga_session_id,
-        'INTRADAY' AS source_priority,
+        2 AS source_priority,
         CURRENT_TIMESTAMP() AS atualization_date
     FROM
         `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_intraday_20260311`
-
-    /* PRODUÇÃO DINÂMICA
-    FROM `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_intraday_*`
-    WHERE _TABLE_SUFFIX = FORMAT_DATE('%Y%m%d', CURRENT_DATE())
-    */
 )
 
 SELECT
-    sha256(concat(cast(event_timestamp as string), event_name, user_pseudo_id)) AS surrogate_key,
+    -- Chave Única robusta para eventos GA4
+    to_hex(sha256(concat(cast(event_timestamp as string), event_name, user_pseudo_id))) AS surrogate_key,
     * EXCEPT(source_priority, atualization_date),
     atualization_date
 FROM

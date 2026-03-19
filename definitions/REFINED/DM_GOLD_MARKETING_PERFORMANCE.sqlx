@@ -3,9 +3,9 @@ config {
     schema: data.refined_schema,
     name: data.tab_dm_mkt,
     assertions: {
-        uniqueKey: ["date", "campaign_id"],
+        uniqueKey: ["ad_date", "campaign_id"],
         rowConditions: [
-            "safe_divide(total_cost, total_conversions) >= 0"
+            "safe_divide(cost, conversions) >= 0"
         ]
     },
     description: "Refined Layer: Visão de Marketing focada em ROAS por Campanha.",

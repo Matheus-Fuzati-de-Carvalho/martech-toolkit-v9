@@ -79,4 +79,4 @@ main:
                   topic: "projects/${project_id}/topics/martech-v9-alerts"
                   body:
                     messages:
-                      - data: $${base64.encode(json.encode_to_string(error_details))}
+                      - data: $${base64.encode(text.encode(json.encode_to_string(error_details)))}

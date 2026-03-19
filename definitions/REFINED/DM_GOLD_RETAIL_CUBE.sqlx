@@ -6,7 +6,7 @@ config {
         uniqueKey: ["ad_date", "brand", "category"],
         nonNull: ["brand", "category"],
         rowConditions: [
-            "acos >= 0 OR acos IS NULL"
+            "investment >= 0 OR investment IS NULL"
         ]
     },
     description: "Refined Layer: Cubo de Dados de Retail Media com quebra por Marca e Categoria via Regex.",
