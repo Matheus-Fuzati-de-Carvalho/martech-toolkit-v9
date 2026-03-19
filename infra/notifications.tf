@@ -31,11 +31,12 @@ resource "google_cloudfunctions2_function" "email_notifier" {
         object = google_storage_bucket_object.function_source.name
       }
     }
-    depends_on = [
+  }
+  depends_on = [
     time_sleep.wait_api_propagation,
     google_storage_bucket_object.function_source
   ]
-  }
+}
 
   service_config {
     max_instance_count = 1
