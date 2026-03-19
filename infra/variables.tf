@@ -55,12 +55,12 @@ variable "assertion_schema" {
 # --- Fontes Raw ---
 variable "raw_ga4_dataset" {
   type    = string
-  default = "RAW_SRC_GA4"
+  default = "RAW_SRC_GA4_EXTERNAL"
 }
 
 variable "raw_ads_dataset" {
   type    = string
-  default = "RAW_SRC_ADS"
+  default = "RAW_SRC_ADS_EXTERNAL"
 }
 
 variable "raw_ads_table" {
