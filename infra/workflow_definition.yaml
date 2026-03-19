@@ -10,15 +10,19 @@ main:
         call: http.post
         args:
           url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
-          auth:
-            type: OAuth2
+          auth: {type: OAuth2}
           body:
             gitCommitish: "main"
             codeCompilationConfig:
               vars:
-                # Variáveis de negócio injetadas pelo Terraform ($)
                 flavor: "${flavor}"
                 lookback_days: "${lookback_days}"
+                # INJETE AS VARIÁVEIS AQUI:
+                raw_ga4: "${raw_ga4}"
+                raw_ads: "${raw_ads}"
+                raw_ads_table: "${raw_ads_table}"
+                silver_schema: "${silver_schema}"
+                gold_schema: "${gold_schema}"
         result: compilation_result
 
     - run_invocation:

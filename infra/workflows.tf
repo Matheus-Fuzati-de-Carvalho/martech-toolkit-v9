@@ -23,12 +23,18 @@ resource "google_workflows_workflow" "dataform_orchestrator" {
   project         = local.project_id
 
   # Carrega a lógica do ficheiro YAML
-  source_contents = templatefile("${path.module}/workflow_definition.yaml", {
-    project_id      = local.project_id,
-    service_region          = var.service_region,
-    repository = google_dataform_repository.martech_v9_repo.name,
-    flavor          = var.flavor,
+source_contents = templatefile("${path.module}/workflow_definition.yaml", {
+    project_id      = local.project_id
+    service_region  = var.service_region
+    repository      = google_dataform_repository.martech_v9_repo.name
+    flavor          = var.flavor
     lookback_days   = var.lookback_days
+    # ADICIONE ESTAS LINHAS ABAIXO:
+    raw_ga4         = var.raw_ga4_dataset
+    raw_ads         = var.raw_ads_dataset
+    raw_ads_table   = var.raw_ads_table
+    silver_schema   = var.silver_schema
+    gold_schema     = var.refined_schema
   })
 
   depends_on = [google_dataform_repository.martech_v9_repo]
