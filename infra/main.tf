@@ -1,68 +1,44 @@
-# 1. APIs
-resource "google_project_service" "apis" {
+# infra/main.tf
+
+# 1. Captura automaticamente o projeto configurado no gcloud/provider
+data "google_client_config" "current" {}
+
+locals {
+  project_id = data.google_client_config.current.project
+  # Lista de datasets para criação em lote
+  datasets = [
+    var.silver_schema,
+    var.refined_schema,
+    var.quality_schema,
+    var.assertion_schema
+  ]
+}
+
+# 2. Ativação das APIs necessárias (Obrigatório para um deploy limpo)
+resource "google_project_service" "services" {
   for_each = toset([
-    "compute.googleapis.com", "bigquery.googleapis.com",
-    "dataform.googleapis.com", "workflows.googleapis.com",
-    "cloudscheduler.googleapis.com", "secretmanager.googleapis.com",
-    "iam.googleapis.com"
+    "dataform.googleapis.com",
+    "bigquery.googleapis.com",
+    "workflows.googleapis.com",
+    "dataplex.googleapis.com",
+    "cloudfunctions.googleapis.com",
+    "pubsub.googleapis.com"
   ])
   service = each.key
   disable_on_destroy = false
 }
 
-# 2. Identidades (Service Agents)
-resource "google_project_service_identity" "dataform_sa" {
-  provider = google-beta
-  service  = "dataform.googleapis.com"
-  depends_on = [google_project_service.apis]
-}
+# 3. Criação dos Datasets no BigQuery
+resource "google_bigquery_dataset" "datasets" {
+  for_each = toset(local.datasets)
+  dataset_id = each.key
+  location   = var.region
+  project    = local.project_id
 
-resource "google_project_service_identity" "workflows_agent" {
-  provider = google-beta
-  service  = "workflows.googleapis.com"
-  depends_on = [google_project_service.apis]
-}
+  labels = {
+    managed_by = "terraform"
+    toolkit    = "martech-v9"
+  }
 
-# 3. Service Account do Orquestrador
-resource "google_service_account" "martech_sa" {
-  account_id   = "martech-v8-orchestrator"
-  display_name = "Service Account para Orquestrador Martech V8"
-}
-
-# 4. IAM
-resource "google_project_iam_member" "df_permissions" {
-  for_each = toset(["roles/bigquery.admin", "roles/secretmanager.secretAccessor"])
-  project  = var.project_id
-  role     = each.key
-  member   = "serviceAccount:${google_project_service_identity.dataform_sa.email}"
-}
-
-resource "google_project_iam_member" "workflow_perms" {
-  for_each = toset(["roles/dataform.editor", "roles/workflows.invoker"])
-  project  = var.project_id
-  role     = each.key
-  member   = "serviceAccount:${google_service_account.martech_sa.email}"
-}
-
-# 5. Pausa para Propagação
-resource "time_sleep" "wait_for_iam" {
-  depends_on = [
-    google_project_iam_member.df_permissions,
-    google_project_iam_member.workflow_perms,
-    google_project_service_identity.workflows_agent
-  ]
-  create_duration = "90s"
-}
-
-# 6. Datasets
-resource "google_bigquery_dataset" "silver_ds" {
-  dataset_id = var.silver_dataset
-  location   = "US"
-  delete_contents_on_destroy = false
-}
-
-resource "google_bigquery_dataset" "gold_ds" {
-  dataset_id = var.gold_dataset
-  location   = "US"
-  delete_contents_on_destroy = false
+  depends_on = [google_project_service.services]
 }

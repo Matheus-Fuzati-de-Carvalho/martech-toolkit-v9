@@ -1,80 +1,104 @@
+# ==============================================================================
+# VARIÁVEIS DE INFRAESTRUTURA - MARTECH TOOLKIT V9
+# Sincronizado com deploy.sh (Estilo v8)
+# ==============================================================================
+
 variable "project_id" {
   type        = string
-  description = "O ID do projeto GCP"
+  description = "ID do projeto (Capturado automaticamente, mas declarado por segurança)"
+  default     = ""
 }
 
 variable "region" {
-  type        = string
-  default     = "US"
-  description = "Região para os recursos"
+  type    = string
+  default = "US"
 }
 
-variable "github_repo_url" {
-  type        = string
-  description = "URL do repositório Git"
+variable "git_token" {
+  type      = string
+  sensitive = true
 }
 
-variable "github_token" {
-  type        = string
-  sensitive   = true
-  description = "PAT do GitHub"
+variable "git_repo_url" {
+  type    = string
+  default = "https://github.com/Matheus-Fuzati-de-Carvalho/martech-toolkit-v9.git"
 }
 
+# --- Schemas (Datasets) ---
+variable "silver_schema" {
+  type    = string
+  default = "TRUSTED"
+}
+
+variable "refined_schema" {
+  type    = string
+  default = "REFINED"
+}
+
+variable "quality_schema" {
+  type    = string
+  default = "QUALITY"
+}
+
+variable "assertion_schema" {
+  type    = string
+  default = "QUALITY_ASSERTIONS"
+}
+
+# --- Fontes Raw ---
+variable "raw_ga4_dataset" {
+  type    = string
+  default = "RAW_SRC_GA4"
+}
+
+variable "raw_ads_dataset" {
+  type    = string
+  default = "RAW_SRC_ADS"
+}
+
+variable "raw_ads_table" {
+  type    = string
+  default = "ad_CampaignBasicStats_987654321"
+}
+
+# --- Nomes de Tabelas (Injetados via deploy.sh) ---
+variable "tab_ft_ga4" {
+  type    = string
+  default = "FT_SIL_GA4_EVENTS"
+}
+
+variable "tab_ft_ads" {
+  type    = string
+  default = "FT_SIL_ADS_PERFORMANCE"
+}
+
+variable "tab_dm_mkt" {
+  type    = string
+  default = "DM_GOLD_MARKETING_PERFORMANCE"
+}
+
+variable "tab_dm_retail" {
+  type    = string
+  default = "DM_GOLD_RETAIL_CUBE"
+}
+
+# --- Orquestração e Monitoramento ---
 variable "flavor" {
   type    = string
   default = "full"
 }
 
-# Variáveis de Origem (RAW)
-variable "raw_ga4" {
-  type        = string
-  description = "Dataset do GA4"
+variable "lookback_days" {
+  type    = number
+  default = 3
 }
 
-variable "raw_ads" {
-  type        = string
-  description = "Dataset do Ads"
+variable "cron_schedule" {
+  type    = string
+  default = "0 8 * * *"
 }
 
-variable "raw_ads_table" {
-  type        = string
-  description = "Nome da tabela principal de Ads"
-}
-
-# Variáveis de Destino (Datasets)
-variable "silver_dataset" {
-  type        = string
-  description = "Nome do dataset Silver"
-}
-
-variable "gold_dataset" {
-  type        = string
-  description = "Nome do dataset Gold"
-}
-
-# Nomes das Tabelas (Dynamic Names)
-variable "tab_slv_ga4" {
-  type        = string
-  description = "Nome da tabela silver ga4"
-}
-
-variable "tab_slv_ads" {
-  type        = string
-  description = "Nome da tabela silver ads"
-}
-
-variable "tab_gld_mkt" {
-  type        = string
-  description = "Nome da tabela gold marketing"
-}
-
-variable "tab_gld_retail" {
-  type        = string
-  description = "Nome da tabela gold retail media"
-}
-
-variable "schedule_cron" {
-  type        = string
-  description = "Expressao Cron para o agendamento do Cloud Scheduler"
-  default     = "0 6 * * *"
+variable "notification_email" {
+  type    = string
+  default = "alerta@exemplo.com"
 }

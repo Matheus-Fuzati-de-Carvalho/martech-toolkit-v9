@@ -1,0 +1,43 @@
+config {
+    type: "table",
+    schema: data.quality_schema,
+    name: "DM_DQ_DUPLICATE_AUDIT",
+    assertions: {
+        rowConditions: [
+            "duplicated_keys_count = 0" 
+        ]
+    },
+    description: "Quality Layer: Validação de unicidade das Surrogate Keys.",
+    tags: ["quality", "monitoring"]
+}
+
+WITH duplicates AS (
+    SELECT
+        '${data.tab_ft_ga4}' AS table_name,
+        surrogate_key,
+        COUNT(*) as occurrence
+    FROM
+        ${ref(data.tab_ft_ga4)}
+    GROUP BY 1, 2
+    HAVING occurrence > 1
+
+    UNION ALL
+
+    SELECT
+        '${data.tab_ft_ads}' AS table_name,
+        surrogate_key,
+        COUNT(*) as occurrence
+    FROM
+        ${ref(data.tab_ft_ads)}
+    GROUP BY 1, 2
+    HAVING occurrence > 1
+)
+
+SELECT
+    table_name,
+    COUNT(DISTINCT surrogate_key) AS duplicated_keys_count,
+    SUM(occurrence) AS total_duplicated_rows,
+    CURRENT_TIMESTAMP() AS execution_date
+FROM
+    duplicates
+GROUP BY 1

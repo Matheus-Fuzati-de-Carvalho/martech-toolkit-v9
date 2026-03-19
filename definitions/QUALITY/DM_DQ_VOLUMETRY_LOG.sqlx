@@ -1,0 +1,32 @@
+config {
+    type: "incremental",
+    schema: data.quality_schema,
+    name: "DM_DQ_VOLUMETRY_LOG",
+    assertions: {
+        uniqueKey: ["table_name", "reference_date", "execution_date"]
+    },
+    description: "Quality Layer: Log histórico de volumetria das tabelas Trusted.",
+    tags: ["quality", "monitoring"]
+}
+
+-- Log de Volumetria GA4
+SELECT
+    '${data.tab_ft_ga4}' AS table_name,
+    event_date AS reference_date,
+    COUNT(*) AS row_count,
+    CURRENT_TIMESTAMP() AS execution_date
+FROM
+    ${ref(data.tab_ft_ga4)}
+GROUP BY 1, 2
+
+UNION ALL
+
+-- Log de Volumetria Ads
+SELECT
+    '${data.tab_ft_ads}' AS table_name,
+    ad_date AS reference_date,
+    COUNT(*) AS row_count,
+    CURRENT_TIMESTAMP() AS execution_date
+FROM
+    ${ref(data.tab_ft_ads)}
+GROUP BY 1, 2

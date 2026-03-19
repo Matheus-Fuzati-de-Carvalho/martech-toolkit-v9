@@ -1,0 +1,39 @@
+config {
+    type: "incremental",
+    schema: data.silver_schema,
+    name: data.tab_ft_ads,
+    assertions: {
+        uniqueKey: ["surrogate_key"],
+        nonNull: ["ad_date", "campaign_id", "ads_cost"],
+        rowConditions: [
+            "ads_cost >= 0",
+            "ads_clicks >= 0"
+        ]
+    },
+    description: "Trusted Layer: Performance de Ads normalizada.",
+    tags: ["silver", "ads", "trusted"],
+    bigquery: {
+        partitionBy: "ad_date",
+        clusterBy: ["campaign_id"]
+    }
+}
+
+SELECT
+    _DATA_DATE AS ad_date,
+    ExternalCustomerId AS customer_id,
+    CampaignId AS campaign_id,
+    CampaignName AS campaign_name, -- Importante para o Regex na Gold
+    Clicks AS ads_clicks,
+    Impressions AS ads_impressions,
+    (Cost / 1000000) AS ads_cost,
+    sha256(concat(cast(_DATA_DATE as string), cast(CampaignId as string))) AS surrogate_key,
+    CURRENT_TIMESTAMP() AS atualization_date
+FROM
+    `${data.raw_ads_project}.${data.raw_ads_dataset}.ad_CampaignBasicStats_987654321`
+
+/* PRODUÇÃO DINÂMICA
+FROM `${data.raw_ads_project}.${data.raw_ads_dataset}.ad_performance_report_*`
+WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)) AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+*/
+
+QUALIFY ROW_NUMBER() OVER(PARTITION BY _DATA_DATE, CampaignId ORDER BY CURRENT_TIMESTAMP() DESC) = 1

@@ -1,0 +1,34 @@
+config {
+    type: "table",
+    schema: data.quality_schema,
+    name: "DM_DQ_NULL_AUDIT",
+    assertions: {
+        rowConditions: [
+            "null_percentage <= 100"
+        ]
+    },
+    description: "Quality Layer: Auditoria de campos nulos em dimensões críticas.",
+    tags: ["quality", "monitoring"]
+}
+
+SELECT
+    'GA4' AS source,
+    'ga_session_id' AS column_audited,
+    COUNT(*) AS total_rows,
+    COUNTIF(ga_session_id IS NULL) AS null_rows,
+    SAFE_DIVIDE(COUNTIF(ga_session_id IS NULL), COUNT(*)) * 100 AS null_percentage,
+    CURRENT_TIMESTAMP() AS execution_date
+FROM
+    ${ref(data.tab_ft_ga4)}
+
+UNION ALL
+
+SELECT
+    'ADS' AS source,
+    'campaign_id' AS column_audited,
+    COUNT(*) AS total_rows,
+    COUNTIF(campaign_id IS NULL) AS null_rows,
+    SAFE_DIVIDE(COUNTIF(campaign_id IS NULL), COUNT(*)) * 100 AS null_percentage,
+    CURRENT_TIMESTAMP() AS execution_date
+FROM
+    ${ref(data.tab_ft_ads)}

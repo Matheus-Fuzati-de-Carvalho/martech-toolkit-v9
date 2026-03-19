@@ -1,0 +1,16 @@
+Passo 1:
+
+Aprimorar códigos sqlx de silver e gold, precisam ser mais completos, profissionais e complexos (no bom sentido) - Adicionar tags, assertions mais específicos no dataform etc 
+Passo 1. Ok, olhar com mais detalhes
+
+Passo 2. Não usarei outras bases
+
+Passo 3. Ok, olhar com mais detalhes
+
+Passo 4. Não usar
+
+
+
+Passo 2:
+
+Implementação de estrutura de FinOps (não sei como ainda, vamos discutir quando chegar a hora) e Implementação de práticas de qualidade e observalidade de dados

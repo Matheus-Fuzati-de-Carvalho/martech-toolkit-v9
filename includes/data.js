@@ -3,21 +3,32 @@ const v = dataform.projectConfig.vars;
 
 module.exports = {
   project_id: dataform.projectConfig.defaultDatabase,
-  // Datasets
-  raw_ga4: v.raw_ga4 || "raw_ga4",
-  raw_ads: v.raw_ads || "raw_ads",
-  silver_schema: v.silver_schema || "martech_silver",
-  gold_schema: v.gold_schema || "martech_gold",
   
-  // Tabelas
-  tab_slv_ga4: v.tab_slv_ga4 || "slv_ga4_events",
-  tab_slv_ads: v.tab_slv_ads || "slv_ads_performance",
-  tab_gld_mkt: v.tab_gld_mkt || "fct_marketing_performance",
-  tab_gld_retail: v.tab_gld_retail || "fct_retail_media_cube",
+  // --- Datasets (Schemas) ---
+  silver_schema: v.silver_schema || "TRUSTED",
+  refined_schema: v.refined_schema || "REFINED",
+  quality_schema: v.quality_schema || "QUALITY",
   
-  // Injeção da tabela bruta de Ads
-  raw_ads_table: v.raw_ads_table || "ad_CampaignBasicStats_987654321",
+  // --- Fontes Brutas (Raw) ---
+  raw_ga4_project: v.raw_ga4_project || dataform.projectConfig.defaultDatabase,
+  raw_ga4_dataset: v.raw_ga4_dataset || "RAW_SRC_GA4",
   
+  raw_ads_project: v.raw_ads_project || dataform.projectConfig.defaultDatabase,
+  raw_ads_dataset: v.raw_ads_dataset || "RAW_SRC_ADS",
+  raw_ads_table: v.raw_ads_table || "ad_CampaignBasicStats_987654321", // Tabela fixa p/ demo
+  
+  // --- Nomenclatura das Tabelas (Opcional, mas mantido p/ flexibilidade v8) ---
+  tab_ft_ga4: v.tab_ft_ga4 || "FT_SIL_GA4_EVENTS",
+  tab_ft_ads: v.tab_ft_ads || "FT_SIL_ADS_PERFORMANCE",
+  tab_dm_mkt: v.tab_dm_mkt || "DM_GOLD_MARKETING_PERFORMANCE",
+  tab_dm_retail: v.tab_dm_retail || "DM_GOLD_RETAIL_CUBE",
+  
+  // --- Parâmetros de Execução ---
+  lookback_days: v.lookback_days || "3",
+  
+  // --- Controle de Flavor (Sabor) ---
+  // Permite rodar apenas as tags específicas
   enable_marketing: ["marketing", "full"].includes(v.flavor || "full"),
-  enable_retail_media: ["retail_media", "full"].includes(v.flavor || "full")
+  enable_retail: ["retail", "full"].includes(v.flavor || "full"),
+  enable_quality: ["quality", "full"].includes(v.flavor || "full")
 };

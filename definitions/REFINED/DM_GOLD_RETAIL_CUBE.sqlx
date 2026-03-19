@@ -1,0 +1,27 @@
+config {
+    type: "table",
+    schema: data.refined_schema,
+    name: data.tab_dm_retail,
+    assertions: {
+        uniqueKey: ["ad_date", "brand", "category"],
+        nonNull: ["brand", "category"],
+        rowConditions: [
+            "acos >= 0 OR acos IS NULL"
+        ]
+    },
+    description: "Refined Layer: Cubo de Dados de Retail Media com quebra por Marca e Categoria via Regex.",
+    tags: ["gold", "retail", "refined"]
+}
+
+SELECT
+    ad_date,
+    -- EXTRAÇÃO VIA REGEX (Padrão: BR_MARCA_CATEGORIA_...)
+    REGEXP_EXTRACT(campaign_name, r'^[^_]+_([^_]+)') AS brand,
+    REGEXP_EXTRACT(campaign_name, r'^[^_]+_[^_]+_([^_]+)') AS category,
+    SUM(ads_clicks) AS clicks,
+    SUM(ads_cost) AS investment,
+    -- Simulação de Receita para cálculo de ACOS na Demo
+    SUM(ads_cost * 5.5) AS estimated_revenue 
+FROM
+    ${ref(data.tab_ft_ads)}
+GROUP BY 1, 2, 3

@@ -1,9 +1,26 @@
-# -
+# workflow_settings.yaml
+
+# 1. Configurações de Localização e Destino Padrão
 defaultLocation: "US"
-defaultDataset: "martech_refined"
-defaultAssertionDataset: "martech_assertions"
+defaultDataset: "REFINED" # Onde as tabelas Gold serão criadas por padrão
+defaultAssertionDataset: "QUALITY_ASSERTIONS" # Isolamento total dos erros
+
+# 2. Declaração do Esquema de Variáveis (Contrato)
+# Estes valores funcionam como "Defaults" para desenvolvimento local.
+# No deploy.sh ou no Workflow, passaremos os valores reais via --vars.
 vars:
   flavor: "full"
-  raw_ga4_dataset: "raw_ga4"
-  raw_ads_dataset: "raw_ads"
+  # Schemas (Datasets)
+  silver_schema: "TRUSTED"
+  refined_schema: "REFINED"
+  quality_schema: "QUALITY"
+  
+  # Fontes de Dados (Raw)
+  # O projeto será injetado dinamicamente via Compilation Overrides no Terraform
+  raw_ga4_dataset: "RAW_SRC_GA4"
+  raw_ads_dataset: "RAW_SRC_ADS"
   raw_ads_table: "ad_CampaignBasicStats_987654321"
+  
+  # Parâmetros de Motor
+  lookback_days: "3"
+  
