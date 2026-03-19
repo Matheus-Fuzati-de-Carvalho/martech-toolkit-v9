@@ -25,7 +25,7 @@ resource "google_workflows_workflow" "dataform_orchestrator" {
   source_contents = templatefile("${path.module}/workflow_definition.yaml", {
     project_id      = local.project_id,
     region          = var.region,
-    repository_name = google_dataform_repository.martech_v9_repo.name,
+    repository = google_dataform_repository.martech_v9_repo.name,
     flavor          = var.flavor,
     lookback_days   = var.lookback_days
   })

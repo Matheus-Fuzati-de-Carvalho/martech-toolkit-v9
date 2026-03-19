@@ -50,4 +50,7 @@ resource "google_dataplex_asset" "silver_asset" {
     name = "projects/${local.project_id}/datasets/${var.silver_schema}"
     type = "BIGQUERY_DATASET"
   }
+  discovery_spec {
+    enabled = false
+  }
 }
