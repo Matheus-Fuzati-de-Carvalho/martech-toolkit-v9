@@ -17,7 +17,7 @@ locals {
 # 2. Ativação das APIs necessárias (Obrigatório para um deploy limpo)
 resource "google_project_service" "services" {
   for_each = toset([
-"dataform.googleapis.com",
+    "dataform.googleapis.com",
     "bigquery.googleapis.com",
     "workflows.googleapis.com",
     "dataplex.googleapis.com",
