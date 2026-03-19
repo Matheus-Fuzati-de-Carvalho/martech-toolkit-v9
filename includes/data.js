@@ -11,10 +11,10 @@ module.exports = {
   
   // --- Fontes Brutas (Raw) ---
   raw_ga4_project: v.raw_ga4_project || dataform.projectConfig.defaultDatabase,
-  raw_ga4_dataset: v.raw_ga4_dataset || "RAW_SRC_GA4",
+  raw_ga4_dataset: v.raw_ga4_dataset || "RAW_SRC_GA4_EXTERNAL",
   
   raw_ads_project: v.raw_ads_project || dataform.projectConfig.defaultDatabase,
-  raw_ads_dataset: v.raw_ads_dataset || "RAW_SRC_ADS",
+  raw_ads_dataset: v.raw_ads_dataset || "RAW_SRC_ADS_EXTERNAL",
   raw_ads_table: v.raw_ads_table || "ad_CampaignBasicStats_987654321", // Tabela fixa p/ demo
   
   // --- Nomenclatura das Tabelas (Opcional, mas mantido p/ flexibilidade v8) ---
