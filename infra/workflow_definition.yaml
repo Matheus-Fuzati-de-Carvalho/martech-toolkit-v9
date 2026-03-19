@@ -3,8 +3,8 @@ main:
   steps:
     - init:
         assign:
-          # Variáveis injetadas pelo Terraform (Cifrão Simples)
-          - repository: "projects/${project_id}/locations/${region}/repositories/${repository}"
+          # Variável injetada pelo Terraform ($)
+          - repository: "projects/${project_id}/locations/${region}/repositories/${repo_name}"
 
     - compile_dataform:
         call: http.post
@@ -16,6 +16,7 @@ main:
             gitCommitish: "main"
             codeCompilationConfig:
               vars:
+                # Variáveis de negócio injetadas pelo Terraform ($)
                 flavor: "${flavor}"
                 lookback_days: "${lookback_days}"
         result: compilation_result
@@ -32,6 +33,7 @@ main:
                   body:
                     compilationResult: $${compilation_result.body.name}
                     invocationConfig:
+                      # Filtra os modelos pela TAG (marketing, retail ou full)
                       includedTags: ["${flavor}"]
                       transitiveDependenciesIncluded: true
                 result: invocation
@@ -51,22 +53,20 @@ main:
                   - condition: $${invocation_status.body.state != "SUCCEEDED"}
                     raise: "Workflow invocation failed"
         
-        retry: # Tenta novamente em caso de erro temporário de rede
+        retry:
           attempts: 2
           backoff:
             initial_delay: 60
             multiplier: 2
 
-        # Se houver erro ou falha de Assertion, o Workflow "cai" aqui
+        # 🚨 Inteligência de Erro V9: Avisa o Pub/Sub que dispara seu e-mail
         except:
           as: e
           steps:
-            - prepare_error_data:
+            - prepare_error_payload:
                 assign:
-                  - error_payload:
-                      # Variáveis exclusivas do Workflow usam Cifrão Duplo ($$)
-                      message: $${e.message} 
-                      # Variáveis do Terraform usam Cifrão Simples ($)
+                  - error_details:
+                      message: $${e.message}
                       flavor: "${flavor}"
                       project: "${project_id}"
             - publish_to_pubsub:
@@ -75,4 +75,4 @@ main:
                   topic: "projects/${project_id}/topics/martech-v9-alerts"
                   body:
                     messages:
-                      - data: $${base64.encode(json.encode_to_string(error_payload))}
+                      - data: $${base64.encode(json.encode_to_string(error_details))}

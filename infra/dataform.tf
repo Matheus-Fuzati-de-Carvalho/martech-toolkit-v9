@@ -53,13 +53,3 @@ resource "google_project_iam_member" "dataform_metadata_viewer" {
   member     = "serviceAccount:${local.dataform_sa}"
   depends_on = [google_dataform_repository.martech_v9_repo]
 }
-
-resource "google_dataform_repository_workspace" "repo" {
-  provider   = google-beta
-  project    = local.project_id
-  location   = var.region
-  repository = google_dataform_repository.martech_v9_repo.name
-  name       = "workspace-martech-v9"
-
-  depends_on = [google_dataform_repository.martech_v9_repo]
-}

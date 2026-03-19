@@ -73,6 +73,13 @@ echo "🚦 Disparando Workflow de teste..."
 WORKFLOW_NAME=$(terraform output -raw workflow_name)
 gcloud workflows run "$WORKFLOW_NAME" --project="$CURRENT_PROJECT" --location="$REGION"
 
+echo "🏗️ Criando Workspace de desenvolvimento no Dataform..."
+gcloud dataform workspaces create dev-workspace \
+    --repository=martech-toolkit-v9 \
+    --location=$REGION \
+    --project=$PROJECT_ID \
+    --quiet || echo "⚠️ Workspace já existe ou houve um erro leve."
+
 echo "--------------------------------------------------------"
 echo "✅ DEPLOY v9 FINALIZADO COM SUCESSO!"
 echo "--------------------------------------------------------"
