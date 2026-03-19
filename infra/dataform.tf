@@ -4,7 +4,7 @@
 resource "google_dataform_repository" "martech_v9_repo" {
   provider = google-beta
   project  = local.project_id
-  region   = var.data_location
+  region   = var.service_region
   name     = "martech-toolkit-v9"
 
   git_remote_settings {
