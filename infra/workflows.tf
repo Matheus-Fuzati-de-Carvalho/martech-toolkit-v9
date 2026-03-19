@@ -12,7 +12,7 @@ resource "google_service_account" "workflow_sa" {
 resource "google_project_iam_member" "workflow_dataform_editor" {
   project = local.project_id
   role    = "roles/dataform.editor"
-  member  = "service_account:${google_service_account.workflow_sa.email}"
+  member  = "serviceAccount:${google_service_account.workflow_sa.email}"
 }
 
 # 3. O recurso do Workflow
