@@ -46,4 +46,4 @@ resource "google_workflows_workflow" "dataform_orchestrator" {
   })
 
   depends_on = [google_dataform_repository.martech_v9_repo]
-}
+}}
