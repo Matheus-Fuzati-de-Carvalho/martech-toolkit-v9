@@ -3,7 +3,6 @@ main:
   steps:
     - init:
         assign:
-          # O Terraform substitui ${...} pelo valor real no deploy
           - project_id: "${project_id}"
           - repository: "${repository}"
           - flavor: "${flavor}"
@@ -11,7 +10,7 @@ main:
     - compile_dataform:
         call: http.post
         args:
-          # Como 'repository' já é o caminho completo, apenas colamos na URL
+          # Corrigido: Usamos apenas a variável direta para evitar o erro de sintaxe do Terraform
           url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
           auth: {type: OAuth2}
           body:
@@ -41,6 +40,7 @@ main:
             - create_invocation:
                 call: http.post
                 args:
+                  # Corrigido para matar o 404
                   url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
                   auth: {type: OAuth2}
                   body:
@@ -70,20 +70,13 @@ main:
             initial_delay: 30
             multiplier: 1
 
-        # 🚨 SISTEMA DE ALERTA (Onde o e-mail funciona)
         except:
           as: e
           steps:
-            - prepare_error_payload:
-                assign:
-                  - error_details:
-                      error_message: $${e.message}
-                      flavor: "${flavor}"
-                      project: "${project_id}"
             - publish_to_pubsub:
                 call: googleapis.pubsub.v1.projects.topics.publish
                 args:
                   topic: "projects/${project_id}/topics/martech-v9-alerts"
                   body:
                     messages:
-                      - data: $${base64.encode(text.encode(json.encode_to_string(error_details)))}
+                      - data: $${base64.encode(text.encode(json.encode_to_string({"error": e.message, "flavor": "${flavor}"})))}
