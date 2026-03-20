@@ -17,6 +17,8 @@ TAB_DM_RETAIL=${11:-"DM_GOLD_RETAIL_CUBE"}
 SERVICE_REGION=${12:-"us-central1"}
 DATA_LOCATION=${13:-"US"}
 NOTIFICATION_EMAIL=${14}
+EMAIL_USER=${15:-"default@example.com"}
+EMAIL_PASSWORD=${16:-"defaultpassword"}
 
 echo "--------------------------------------------------------"
 echo "🚀 Iniciando Deploy Martech v9 (Infra Only)"
@@ -40,7 +42,9 @@ terraform apply -auto-approve \
   -var="tab_dm_retail=$TAB_DM_RETAIL" \
   -var="service_region=$SERVICE_REGION" \
   -var="data_location=$DATA_LOCATION" \
-  -var="notification_email=$NOTIFICATION_EMAIL"
+  -var="notification_email=$NOTIFICATION_EMAIL" \
+  -var="email_user=$EMAIL_USER" \
+  -var="email_password=$EMAIL_PASSWORD" 
 
 # 3. Captura de variáveis do output do Terraform
 CURRENT_PROJECT=$(gcloud config get-value project)

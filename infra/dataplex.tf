@@ -60,7 +60,7 @@ resource "google_dataplex_asset" "silver_asset" {
   }
 
   discovery_spec {
-    enabled = false
+    enabled = true
   }
 }
 
@@ -78,6 +78,6 @@ resource "google_dataplex_asset" "refined_asset" {
   }
 
   discovery_spec {
-    enabled = false
+    enabled = true
   }
 }

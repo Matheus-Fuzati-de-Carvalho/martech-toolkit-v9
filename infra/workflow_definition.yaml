@@ -17,7 +17,6 @@ main:
               vars:
                 flavor: "${flavor}"
                 lookback_days: "${lookback_days}"
-                # INJETE AS VARIÁVEIS AQUI:
                 raw_ga4: "${raw_ga4}"
                 raw_ads: "${raw_ads}"
                 raw_ads_table: "${raw_ads_table}"
@@ -60,8 +59,8 @@ main:
         retry:
           attempts: 2
           backoff:
-            initial_delay: 60
-            multiplier: 2
+            initial_delay: 30
+            multiplier: 1
 
         # 🚨 Inteligência de Erro V9: Avisa o Pub/Sub que dispara seu e-mail
         except:
@@ -70,7 +69,7 @@ main:
             - prepare_error_payload:
                 assign:
                   - error_details:
-                      message: $${e.message}
+                      error_message: $${e.message}
                       flavor: "${flavor}"
                       project: "${project_id}"
             - publish_to_pubsub:

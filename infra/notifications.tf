@@ -39,6 +39,8 @@ resource "google_cloudfunctions2_function" "email_notifier" {
     timeout_seconds    = 60
     environment_variables = {
       NOTIFICATION_EMAIL = var.notification_email
+      EMAIL_USER         = var.email_user
+      EMAIL_PASSWORD     = var.email_password
     }
   }
 

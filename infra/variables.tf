@@ -109,3 +109,13 @@ variable "notification_email" {
   type    = string
   default = "alerta@exemplo.com"
 }
+
+variable "email_password" {
+  type    = string
+  default = "123456789"
+}
+
+variable "email_user" {
+  type    = string
+  default = "alerta@exemplo.com"
+}
