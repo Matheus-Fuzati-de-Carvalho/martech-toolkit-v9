@@ -17,16 +17,17 @@ resource "google_project_iam_member" "workflow_dataform_editor" {
 
 # 3. O recurso do Workflow
 resource "google_workflows_workflow" "dataform_orchestrator" {
+resource "google_workflows_workflow" "dataform_orchestrator" {
   name            = "martech-v9-orchestrator"
   region          = var.service_region
   service_account = google_service_account.workflow_sa.id
   project         = local.project_id
 
-  # Carrega a lógica do ficheiro YAML
-source_contents = templatefile("${path.module}/workflow_definition.yaml", {
+  source_contents = templatefile("${path.module}/workflow_definition.yaml", {
     project_id         = local.project_id
     service_region     = var.service_region
-    repository         = google_dataform_repository.martech_v9_repo.id # Caminho completo
+    # Usamos o .id para garantir que o Workflow receba o caminho completo
+    repository         = google_dataform_repository.martech_v9_repo.id 
     notification_email = var.notification_email
     flavor             = var.flavor
     lookback_days      = var.lookback_days
@@ -42,7 +43,7 @@ source_contents = templatefile("${path.module}/workflow_definition.yaml", {
     tab_ft_ads         = var.tab_ft_ads
     tab_dm_mkt         = var.tab_dm_mkt
     tab_dm_retail      = var.tab_dm_retail
-})
+  })
 
   depends_on = [google_dataform_repository.martech_v9_repo]
 }

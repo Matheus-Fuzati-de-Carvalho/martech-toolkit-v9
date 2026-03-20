@@ -1,10 +1,9 @@
-# workflow_definition.yaml
 main:
   params: [args]
   steps:
     - init:
         assign:
-          # Aqui o Terraform injeta os valores e o Workflow os "assume" como variáveis dele
+          # O Terraform substitui ${...} pelo valor real no deploy
           - project_id: "${project_id}"
           - repository: "${repository}"
           - flavor: "${flavor}"
@@ -12,14 +11,13 @@ main:
     - compile_dataform:
         call: http.post
         args:
-          # Usamos $$ para que o Workflow avalie a variável 'repository' interna dele
+          # Como 'repository' já é o caminho completo, apenas colamos na URL
           url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
           auth: {type: OAuth2}
           body:
             gitCommitish: "main"
             codeCompilationConfig:
               vars:
-                # Aqui o Terraform injeta direto os valores no corpo do JSON
                 project_id: "${project_id}"
                 raw_ga4_project: "${raw_ga4_project}"
                 raw_ga4_dataset: "${raw_ga4_dataset}"
@@ -72,6 +70,7 @@ main:
             initial_delay: 30
             multiplier: 1
 
+        # 🚨 SISTEMA DE ALERTA (Onde o e-mail funciona)
         except:
           as: e
           steps:
