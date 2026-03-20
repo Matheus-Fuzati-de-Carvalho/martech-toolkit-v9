@@ -15,13 +15,21 @@ main:
             gitCommitish: "main"
             codeCompilationConfig:
               vars:
-                flavor: "${flavor}"
-                lookback_days: "${lookback_days}"
-                raw_ga4: "${raw_ga4}"
-                raw_ads: "${raw_ads}"
+                project_id: "${project_id}"
+                raw_ga4_project: "${raw_ga4_project}"
+                raw_ga4_dataset: "${raw_ga4_dataset}"
+                raw_ads_project: "${raw_ads_project}"
+                raw_ads_dataset: "${raw_ads_dataset}"
                 raw_ads_table: "${raw_ads_table}"
                 silver_schema: "${silver_schema}"
                 gold_schema: "${gold_schema}"
+                quality_schema: "${quality_schema}"
+                tab_ft_ga4: "${tab_ft_ga4}"
+                tab_ft_ads: "${tab_ft_ads}"
+                tab_dm_mkt: "${tab_dm_mkt}"
+                tab_dm_retail: "${tab_dm_retail}"
+                flavor: "${flavor}"
+                lookback_days: "${lookback_days}"
         result: compilation_result
 
     - run_invocation:

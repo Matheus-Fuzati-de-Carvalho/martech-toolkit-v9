@@ -30,7 +30,7 @@ SELECT
     to_hex(sha256(concat(cast(_DATA_DATE as string), cast(CampaignId as string)))) AS surrogate_key,
     CURRENT_TIMESTAMP() AS atualization_date
 FROM
-    `${data.raw_ads_project}.${data.raw_ads_dataset}.ad_CampaignBasicStats_987654321`
+    `${data.raw_ads_project}.${data.raw_ads_dataset}.${data.raw_ads_table}`
 
 /* LOGICA INCREMENTAL/DINAMICA PARA PRODUÇÃO
 WHERE _DATA_DATE >= DATE_SUB(CURRENT_DATE(), INTERVAL ${data.lookback_days} DAY)
