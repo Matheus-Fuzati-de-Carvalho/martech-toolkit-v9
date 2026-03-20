@@ -69,5 +69,4 @@ fi
 
 echo "--------------------------------------------------------"
 echo "🏁 DEPLOY V9 FINALIZADO!"
-echo "💡 O Workflow não foi executado. Você pode iniciá-lo manualmente no console."
 echo "--------------------------------------------------------"
