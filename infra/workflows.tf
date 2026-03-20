@@ -27,7 +27,7 @@ source_contents = templatefile("${path.module}/workflow_definition.yaml", {
     # 1. Parâmetros de Infraestrutura
     project_id         = local.project_id
     service_region     = var.service_region
-    repository         = google_dataform_repository.martech_v9_repo.name # ID Completo: projects/...
+    repository         = google_dataform_repository.martech_v9_repo.id
     notification_email = var.notification_email
     
     # 2. Configurações de Execução

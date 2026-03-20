@@ -1,14 +1,12 @@
 main:
   params: [args]
   steps:
-    - init:
-        assign:
-          # Variável injetada pelo Terraform ($)
-          - repository: "projects/${project_id}/locations/${service_region}/repositories/${repository}"
+    # 1. REMOVEMOS O PASSO - init TOTALMENTE
 
     - compile_dataform:
         call: http.post
         args:
+          # Usamos a variável ${repository} que já vem pronta do Terraform
           url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
           auth: {type: OAuth2}
           body:
@@ -16,20 +14,7 @@ main:
             codeCompilationConfig:
               vars:
                 project_id: "${project_id}"
-                raw_ga4_project: "${raw_ga4_project}"
-                raw_ga4_dataset: "${raw_ga4_dataset}"
-                raw_ads_project: "${raw_ads_project}"
-                raw_ads_dataset: "${raw_ads_dataset}"
-                raw_ads_table: "${raw_ads_table}"
-                silver_schema: "${silver_schema}"
-                gold_schema: "${gold_schema}"
-                quality_schema: "${quality_schema}"
-                tab_ft_ga4: "${tab_ft_ga4}"
-                tab_ft_ads: "${tab_ft_ads}"
-                tab_dm_mkt: "${tab_dm_mkt}"
-                tab_dm_retail: "${tab_dm_retail}"
-                flavor: "${flavor}"
-                lookback_days: "${lookback_days}"
+                # ... (restante das vars igual)
         result: compilation_result
 
     - run_invocation:
@@ -38,13 +23,13 @@ main:
             - create_invocation:
                 call: http.post
                 args:
+                  # Aplicamos a mesma lógica aqui
                   url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
                   auth:
                     type: OAuth2
                   body:
                     compilationResult: $${compilation_result.body.name}
                     invocationConfig:
-                      # Filtra os modelos pela TAG (marketing, retail ou full)
                       includedTags: ["${flavor}"]
                       transitiveDependenciesIncluded: true
                 result: invocation
