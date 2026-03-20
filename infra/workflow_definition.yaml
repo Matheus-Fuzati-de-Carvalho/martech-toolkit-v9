@@ -1,20 +1,40 @@
+# workflow_definition.yaml
 main:
   params: [args]
   steps:
-    # 1. REMOVEMOS O PASSO - init TOTALMENTE
+    - init:
+        assign:
+          # Aqui o Terraform injeta os valores e o Workflow os "assume" como variáveis dele
+          - project_id: "${project_id}"
+          - repository: "${repository}"
+          - flavor: "${flavor}"
 
     - compile_dataform:
         call: http.post
         args:
-          # Usamos a variável ${repository} que já vem pronta do Terraform
+          # Usamos $$ para que o Workflow avalie a variável 'repository' interna dele
           url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
           auth: {type: OAuth2}
           body:
             gitCommitish: "main"
             codeCompilationConfig:
               vars:
+                # Aqui o Terraform injeta direto os valores no corpo do JSON
                 project_id: "${project_id}"
-                # ... (restante das vars igual)
+                raw_ga4_project: "${raw_ga4_project}"
+                raw_ga4_dataset: "${raw_ga4_dataset}"
+                raw_ads_project: "${raw_ads_project}"
+                raw_ads_dataset: "${raw_ads_dataset}"
+                raw_ads_table: "${raw_ads_table}"
+                silver_schema: "${silver_schema}"
+                gold_schema: "${gold_schema}"
+                quality_schema: "${quality_schema}"
+                tab_ft_ga4: "${tab_ft_ga4}"
+                tab_ft_ads: "${tab_ft_ads}"
+                tab_dm_mkt: "${tab_dm_mkt}"
+                tab_dm_retail: "${tab_dm_retail}"
+                flavor: "${flavor}"
+                lookback_days: "${lookback_days}"
         result: compilation_result
 
     - run_invocation:
@@ -23,10 +43,8 @@ main:
             - create_invocation:
                 call: http.post
                 args:
-                  # Aplicamos a mesma lógica aqui
                   url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
-                  auth:
-                    type: OAuth2
+                  auth: {type: OAuth2}
                   body:
                     compilationResult: $${compilation_result.body.name}
                     invocationConfig:
@@ -38,8 +56,7 @@ main:
                 call: http.get
                 args:
                   url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name}
-                  auth:
-                    type: OAuth2
+                  auth: {type: OAuth2}
                 result: invocation_status
 
             - check_status:
@@ -55,7 +72,6 @@ main:
             initial_delay: 30
             multiplier: 1
 
-        # 🚨 Inteligência de Erro V9: Avisa o Pub/Sub que dispara seu e-mail
         except:
           as: e
           steps:

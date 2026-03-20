@@ -24,34 +24,25 @@ resource "google_workflows_workflow" "dataform_orchestrator" {
 
   # Carrega a lógica do ficheiro YAML
 source_contents = templatefile("${path.module}/workflow_definition.yaml", {
-    # 1. Parâmetros de Infraestrutura
     project_id         = local.project_id
     service_region     = var.service_region
-    repository         = google_dataform_repository.martech_v9_repo.id
+    repository         = google_dataform_repository.martech_v9_repo.id # Caminho completo
     notification_email = var.notification_email
-    
-    # 2. Configurações de Execução
     flavor             = var.flavor
     lookback_days      = var.lookback_days
-
-    # 3. Fontes de Dados (RAW)
     raw_ga4_project    = local.project_id
     raw_ga4_dataset    = var.raw_ga4_dataset
     raw_ads_project    = local.project_id
     raw_ads_dataset    = var.raw_ads_dataset
     raw_ads_table      = var.raw_ads_table
-
-    # 4. Camadas (Schemas)
     silver_schema      = var.silver_schema
     gold_schema        = var.refined_schema
     quality_schema     = "QUALITY"
-
-    # 5. Nomes de Tabelas (Sincronizado com SQLX)
     tab_ft_ga4         = var.tab_ft_ga4
     tab_ft_ads         = var.tab_ft_ads
     tab_dm_mkt         = var.tab_dm_mkt
     tab_dm_retail      = var.tab_dm_retail
-  })
+})
 
   depends_on = [google_dataform_repository.martech_v9_repo]
 }
