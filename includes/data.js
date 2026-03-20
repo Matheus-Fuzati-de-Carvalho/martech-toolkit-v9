@@ -30,5 +30,5 @@ module.exports = {
   // Permite rodar apenas as tags específicas
   enable_marketing: ["marketing", "full"].includes(v.flavor || "full"),
   enable_retail: ["retail", "full"].includes(v.flavor || "full"),
-  enable_quality: ["quality", "full"].includes(v.flavor || "full")
+  enable_quality: ["quality", "full", "marketing", "retail"].includes(v.flavor || "full")
 };
