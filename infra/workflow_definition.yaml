@@ -75,16 +75,15 @@ main:
           steps:
             - prepare_error_payload:
                 assign:
-                  # Criamos o dicionário primeiro para não quebrar o parser
                   - error_map:
-                      error: $${e.message}
+                      message: $${e.message}
                       flavor: "${flavor}"
                       project: "${project_id}"
-                  # Transformamos em string e depois em base64
-                  - error_json: $${json.encode_to_string(error_map)}
+                  - error_json_str: $${json.encode_to_string(error_map)}
             - publish_to_pubsub:
                 call: googleapis.pubsub.v1.projects.topics.publish
                 args:
                   topic: "projects/${project_id}/topics/martech-v9-alerts"
                   body:
                     messages:
+                      - data: $${base64.encode(text.encode(error_json_str))}
