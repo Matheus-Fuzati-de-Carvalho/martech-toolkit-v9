@@ -32,8 +32,8 @@ SELECT
     CURRENT_TIMESTAMP() AS atualization_date
 FROM
     `${data.raw_ads_project}.${data.raw_ads_dataset}.${data.raw_ads_table}`
-WHERE
-    _DATA_DATE >= date_sub(current_date(), interval ${data.lookback_days} day)
+-- WHERE
+--     _DATA_DATE >= date_sub(current_date(), interval ${data.lookback_days} day)
 
 QUALIFY ROW_NUMBER() OVER(
     PARTITION BY _DATA_DATE, CampaignId 

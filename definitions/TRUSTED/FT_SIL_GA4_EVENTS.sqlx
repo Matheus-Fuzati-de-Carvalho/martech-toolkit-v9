@@ -30,9 +30,9 @@ WITH all_sources AS (
         CURRENT_TIMESTAMP() AS atualization_date
     FROM
         `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_*`
-    WHERE
-        _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL ${data.lookback_days} DAY))
-        AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+    -- WHERE
+    --     _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL ${data.lookback_days} DAY))
+    --     AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
 )
 
 SELECT
