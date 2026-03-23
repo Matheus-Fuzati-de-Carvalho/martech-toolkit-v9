@@ -14,10 +14,10 @@ main:
             - compile_dataform:
                 call: http.post
                 args:
-                  url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
+                  url: '$${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}'
                   auth: {type: OAuth2}
                   body:
-                    workspace: $${repository + "/workspaces/${workspace_name}"}
+                    workspace: '$${repository + "/workspaces/${workspace_name}"}'
                     codeCompilationConfig:
                       vars:
                         project_id: "${project_id}"
@@ -40,10 +40,10 @@ main:
             - run_invocation:
                 call: http.post
                 args:
-                  url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
+                  url: '$${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}'
                   auth: {type: OAuth2}
                   body:
-                    compilationResult: $${compilation_result.body.name}
+                    compilationResult: '$${compilation_result.body.name}'
                     invocationConfig:
                       includedTags: ["${flavor}"]
                       transitiveDependenciesIncluded: true
@@ -52,21 +52,21 @@ main:
             - wait_for_completion:
                 call: http.get
                 args:
-                  url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name}
+                  url: '$${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name}'
                   auth: {type: OAuth2}
                 result: invocation_status
 
             - check_status:
                 switch:
-                  - condition: $${invocation_status.body.state == "RUNNING"}
+                  - condition: '$${invocation_status.body.state == "RUNNING"}'
                     next: wait_and_poll
-                  - condition: $${invocation_status.body.state == "SUCCEEDED"}
+                  - condition: '$${invocation_status.body.state == "SUCCEEDED"}'
                     assign:
                       - status_msg: "Execução finalizada sem erros."
                     next: prepare_and_publish
-                  - condition: $${invocation_status.body.state == "FAILED"}
+                  - condition: '$${invocation_status.body.state == "FAILED"}'
                     next: get_invocation_actions
-                next: get_invocation_actions # Fallback para qualquer outro status de erro
+                next: get_invocation_actions
 
             - wait_and_poll:
                 call: sys.sleep
@@ -76,8 +76,8 @@ main:
             - get_invocation_actions:
                 call: http.post
                 args:
-                  # O segredo do Dataform API: usa-se o ":" para chamar o método query
-                  url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name + ":query"}
+                  # O uso das aspas simples aqui impede o erro de ':' no YAML
+                  url: '$${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name + ":query"}'
                   auth: {type: OAuth2}
                 result: invocation_actions
 
@@ -88,33 +88,34 @@ main:
                   - loop_actions:
                       for:
                         value: action
-                        in: $${invocation_actions.body.workflowInvocationActions}
+                        in: '$${invocation_actions.body.workflowInvocationActions}'
                         steps:
                           - check_failed_action:
                               switch:
-                                - condition: $${action.state == "FAILED"}
+                                - condition: '$${action.state == "FAILED"}'
                                   assign:
-                                    - status_msg: $${"Assertion detectado (" + action.canonicalTarget.name + ")"}
+                                    - status_msg: '$${"Assertion detectado (" + action.canonicalTarget.name + ")"}'
                 next: prepare_and_publish
 
         except:
           as: e
           assign:
-            - status_msg: $${"Erro no sistema/compilação: " + e.message}
+            # Trocado ':' por '-' dentro da string para evitar conflitos de parse e envolvido em aspas
+            - status_msg: '$${"Erro de sistema ou compilacao - " + e.message}'
 
     - prepare_and_publish:
         steps:
           - prepare_payload:
               assign:
                 - error_map:
-                    message: $${status_msg}
+                    message: '$${status_msg}'
                     flavor: "${flavor}"
                     project: "${project_id}"
-                - error_json_str: $${json.encode_to_string(error_map)}
+                - error_json_str: '$${json.encode_to_string(error_map)}'
           - publish_to_pubsub:
               call: googleapis.pubsub.v1.projects.topics.publish
               args:
                 topic: "projects/${project_id}/topics/martech-v9-alerts"
                 body:
                   messages:
-                    - data: $${base64.encode(text.encode(error_json_str))}
+                    - data: '$${base64.encode(text.encode(error_json_str))}'
