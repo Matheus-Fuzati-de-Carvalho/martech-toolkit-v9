@@ -6,7 +6,7 @@ main:
           - project_id: "${project_id}"
           - repository: "${repository}"
           - flavor: "${flavor}"
-          - status_msg: "Iniciando execução" # Variável para o payload final
+          - status_msg: "Iniciando execução"
 
     - execution_logic:
         try:
@@ -63,9 +63,10 @@ main:
                   - condition: $${invocation_status.body.state == "SUCCEEDED"}
                     assign:
                       - status_msg: "Execução finalizada sem erros."
-                    next: prepare_and_publish # Vai para o sucesso
-                  - condition: $${invocation_status.body.state != "SUCCEEDED"}
-                    next: get_invocation_actions # Vai investigar a falha
+                    next: prepare_and_publish
+                  - condition: $${invocation_status.body.state == "FAILED"}
+                    next: get_invocation_actions
+                next: get_invocation_actions # Fallback para qualquer outro status de erro
 
             - wait_and_poll:
                 call: sys.sleep
@@ -73,15 +74,16 @@ main:
                 next: wait_for_completion
 
             - get_invocation_actions:
-                call: http.get
+                call: http.post
                 args:
-                  url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name + "/query"}
+                  # O segredo do Dataform API: usa-se o ":" para chamar o método query
+                  url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name + ":query"}
                   auth: {type: OAuth2}
                 result: invocation_actions
 
             - find_assertion_failure:
                 assign:
-                  - status_msg: "Erro na execução do Dataform (Verificar Console)" # Default caso não ache o nome
+                  - status_msg: "Erro na execução (verificar logs do Dataform)"
                 steps:
                   - loop_actions:
                       for:
@@ -95,17 +97,10 @@ main:
                                     - status_msg: $${"Assertion detectado (" + action.canonicalTarget.name + ")"}
                 next: prepare_and_publish
 
-        retry:
-          attempts: 2
-          backoff:
-            initial_delay: 30
-            multiplier: 1
-
         except:
           as: e
           assign:
-            - status_msg: $${"Erro ao compilar dataform: " + e.message}
-          next: prepare_and_publish
+            - status_msg: $${"Erro no sistema/compilação: " + e.message}
 
     - prepare_and_publish:
         steps:
