@@ -53,3 +53,10 @@ resource "google_project_iam_member" "dataform_metadata_viewer" {
   member     = "serviceAccount:${local.dataform_sa}"
   depends_on = [google_dataform_repository.martech_v9_repo]
 }
+
+# Permite que o Dataform consulte metadados de jobs (necessário para FinOps)
+resource "google_project_iam_member" "dataform_resource_viewer" {
+  project = "toolkit-v9-01"
+  role    = "roles/bigquery.resourceViewer"
+  member  = "serviceAccount:service-944991045375@gcp-sa-dataform.iam.gserviceaccount.com"
+}
