@@ -5,117 +5,86 @@ main:
         assign:
           - project_id: "${project_id}"
           - repository: "${repository}"
-          - flavor: "$${default(args.flavor, 'marketing')}"
-          - status_msg: "Iniciando execução"
+          - flavor: "${flavor}"
 
-    - execution_logic:
+    - compile_dataform:
+        call: http.post
+        args:
+          # Corrigido: Usamos apenas a variável direta para evitar o erro de sintaxe do Terraform
+          url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
+          auth: {type: OAuth2}
+          body:
+            # gitCommitish: "main"
+            workspace: $${repository + "/workspaces/${workspace_name}"}
+            codeCompilationConfig:
+              vars:
+                project_id: "${project_id}"
+                raw_ga4_project: "${raw_ga4_project}"
+                raw_ga4_dataset: "${raw_ga4_dataset}"
+                raw_ads_project: "${raw_ads_project}"
+                raw_ads_dataset: "${raw_ads_dataset}"
+                raw_ads_table: "${raw_ads_table}"
+                silver_schema: "${silver_schema}"
+                gold_schema: "${gold_schema}"
+                quality_schema: "${quality_schema}"
+                tab_ft_ga4: "${tab_ft_ga4}"
+                tab_ft_ads: "${tab_ft_ads}"
+                tab_dm_mkt: "${tab_dm_mkt}"
+                tab_dm_retail: "${tab_dm_retail}"
+                flavor: "${flavor}"
+                lookback_days: "${lookback_days}"
+        result: compilation_result
+
+    - run_invocation:
         try:
           steps:
-            - compile_dataform:
+            - create_invocation:
                 call: http.post
                 args:
-                  url: '$${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}'
+                  # Corrigido para matar o 404
+                  url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
                   auth: {type: OAuth2}
                   body:
-                    workspace: '$${repository + "/workspaces/${workspace_name}"}'
-                    codeCompilationConfig:
-                      vars:
-                        project_id: "${project_id}"
-                        raw_ga4_project: "${raw_ga4_project}"
-                        raw_ga4_dataset: "${raw_ga4_dataset}"
-                        raw_ads_project: "${raw_ads_project}"
-                        raw_ads_dataset: "${raw_ads_dataset}"
-                        raw_ads_table: "${raw_ads_table}"
-                        silver_schema: "${silver_schema}"
-                        gold_schema: "${gold_schema}"
-                        quality_schema: "${quality_schema}"
-                        tab_ft_ga4: "${tab_ft_ga4}"
-                        tab_ft_ads: "${tab_ft_ads}"
-                        tab_dm_mkt: "${tab_dm_mkt}"
-                        tab_dm_retail: "${tab_dm_retail}"
-                        flavor: "$${flavor}"
-                        lookback_days: "${lookback_days}"
-                result: compilation_result
-
-            - run_invocation:
-                call: http.post
-                args:
-                  url: '$${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}'
-                  auth: {type: OAuth2}
-                  body:
-                    compilationResult: '$${compilation_result.body.name}'
+                    compilationResult: $${compilation_result.body.name}
                     invocationConfig:
-                      includedTags: ["$${flavor}"]
+                      includedTags: ["${flavor}"]
                       transitiveDependenciesIncluded: true
                 result: invocation
 
             - wait_for_completion:
                 call: http.get
                 args:
-                  url: '$${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name}'
+                  url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name}
                   auth: {type: OAuth2}
                 result: invocation_status
 
             - check_status:
                 switch:
-                  - condition: '$${invocation_status.body.state == "RUNNING"}'
-                    next: wait_and_poll
-                  - condition: '$${invocation_status.body.state == "SUCCEEDED"}'
-                    assign:
-                      - status_msg: "Execução finalizada sem erros."
-                    next: prepare_and_publish
-                  - condition: '$${invocation_status.body.state == "FAILED"}'
-                    next: get_invocation_actions
-                next: get_invocation_actions
-
-            - wait_and_poll:
-                call: sys.sleep
-                args: {seconds: 20}
-                next: wait_for_completion
-
-            - get_invocation_actions:
-                call: http.post
-                args:
-                  url: '$${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name + ":query"}'
-                  auth: {type: OAuth2}
-                result: invocation_actions
-
-            - set_default_failure_msg:
-                assign:
-                  - status_msg: "Erro na execução (verificar logs do Dataform)"
-
-            - look_for_assertion_errors:
-                steps:
-                  - loop_actions:
-                      for:
-                        value: action
-                        in: '$${invocation_actions.body.workflowInvocationActions}'
-                        steps:
-                          - check_failed_action:
-                              switch:
-                                - condition: '$${action.state == "FAILED"}'
-                                  assign:
-                                    - status_msg: '$${"Assertion detectado (" + action.canonicalTarget.name + ")"}'
-                next: prepare_and_publish
+                  - condition: $${invocation_status.body.state == "RUNNING"}
+                    next: wait_for_completion
+                  - condition: $${invocation_status.body.state != "SUCCEEDED"}
+                    raise: "Workflow invocation failed"
+        
+        retry:
+          attempts: 2
+          backoff:
+            initial_delay: 30
+            multiplier: 1
 
         except:
           as: e
-          assign:
-            - status_msg: '$${"Erro de sistema ou compilacao - " + e.message}'
-
-    - prepare_and_publish:
-        steps:
-          - prepare_payload:
-              assign:
-                - error_map:
-                    message: '$${status_msg}'
-                    flavor: "$${flavor}"
-                    project: "${project_id}"
-                - error_json_str: '$${json.encode_to_string(error_map)}'
-          - publish_to_pubsub:
-              call: googleapis.pubsub.v1.projects.topics.publish
-              args:
-                topic: "projects/${project_id}/topics/martech-v9-alerts"
-                body:
-                  messages:
-                    - data: '$${base64.encode(text.encode(error_json_str))}'
+          steps:
+            - prepare_error_payload:
+                assign:
+                  - error_map:
+                      message: $${e.message}
+                      flavor: "${flavor}"
+                      project: "${project_id}"
+                  - error_json_str: $${json.encode_to_string(error_map)}
+            - publish_to_pubsub:
+                call: googleapis.pubsub.v1.projects.topics.publish
+                args:
+                  topic: "projects/${project_id}/topics/martech-v9-alerts"
+                  body:
+                    messages:
+                      - data: $${base64.encode(text.encode(error_json_str))}
