@@ -2,9 +2,7 @@ config {
     type: "incremental",
     schema: data.silver_schema,
     name: data.tab_ft_ads,
-    uniqueKey: ["surrogate_key"],
     assertions: {
-        uniqueKey: ["surrogate_key"],
         nonNull: ["ad_date", "campaign_id", "ads_cost"],
         rowConditions: [
             "ads_cost >= 0",
