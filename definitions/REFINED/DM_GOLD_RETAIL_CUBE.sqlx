@@ -9,19 +9,20 @@ config {
             "investment >= 0 OR investment IS NULL"
         ]
     },
-    description: "Refined Layer: Cubo de Dados de Retail Media com quebra por Marca e Categoria via Regex.",
-    tags: ["gold", "retail", "refined", "full", "retail"]
+    description: "Refined Layer: Cubo de Dados de Retail Media. Extrai Marca e Categoria do nome da campanha.",
+    tags: ["gold", "retail", "refined", "full"]
 }
 
 SELECT
     ad_date,
-    -- EXTRAÇÃO VIA REGEX (Padrão: BR_MARCA_CATEGORIA_...)
-    REGEXP_EXTRACT(campaign_name, r'^[^_]+_([^_]+)') AS brand,
-    REGEXP_EXTRACT(campaign_name, r'^[^_]+_[^_]+_([^_]+)') AS category,
+    -- Proteção: Se o Regex falhar, preenche com 'Outros' para não quebrar o Assertion nonNull
+    COALESCE(REGEXP_EXTRACT(campaign_name, r'^[^_]+_([^_]+)'), 'OUTROS') AS brand,
+    COALESCE(REGEXP_EXTRACT(campaign_name, r'^[^_]+_[^_]+_([^_]+)'), 'SEM_CATEGORIA') AS category,
     SUM(ads_clicks) AS clicks,
     SUM(ads_cost) AS investment,
-    -- Simulação de Receita para cálculo de ACOS na Demo
-    SUM(ads_cost * 5.5) AS estimated_revenue 
+    -- ROAS Estimado de 5.5x para fins de visualização
+    SUM(ads_cost * 5.5) AS estimated_revenue,
+    SAFE_DIVIDE(SUM(ads_cost * 5.5), SUM(ads_cost)) as roas
 FROM
     ${ref(data.tab_ft_ads)}
 GROUP BY 1, 2, 3

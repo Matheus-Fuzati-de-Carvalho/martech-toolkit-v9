@@ -46,13 +46,25 @@ WITH all_sources AS (
 )
 
 SELECT
-    -- Chave Única robusta para eventos GA4
-    to_hex(sha256(concat(cast(event_timestamp as string), event_name, user_pseudo_id))) AS surrogate_key,
+    -- Adicionamos ga_session_id para tornar a chave realmente única
+    to_hex(sha256(concat(
+        cast(event_timestamp as string), 
+        event_name, 
+        user_pseudo_id, 
+        cast(ga_session_id as string)
+    ))) AS surrogate_key,
     * EXCEPT(source_priority, atualization_date),
     atualization_date
-FROM
-    all_sources
-QUALIFY ROW_NUMBER() OVER(
-    PARTITION BY event_timestamp, event_name, user_pseudo_id 
-    ORDER BY source_priority ASC, atualization_date DESC
-) = 1
+FROM (
+    SELECT 
+        *,
+        -- Prioridade: Daily (1) ganha de Intraday (2) se houver o mesmo evento
+        ROW_NUMBER() OVER(
+            PARTITION BY event_timestamp, event_name, user_pseudo_id 
+            ORDER BY source_priority ASC, atualization_date DESC
+        ) as rn
+    FROM all_sources
+)
+WHERE rn = 1
+-- Adicionamos a lógica incremental do Dataform
+${when(incremental(), `WHERE event_date >= date_sub(current_date(), interval ${data.lookback_days} day)`) }

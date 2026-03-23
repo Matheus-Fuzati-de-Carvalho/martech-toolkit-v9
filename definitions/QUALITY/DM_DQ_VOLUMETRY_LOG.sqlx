@@ -9,7 +9,6 @@ config {
     tags: ["quality", "monitoring", "full", "marketing", "retail"]
 }
 
--- Log de Volumetria GA4
 SELECT
     '${data.tab_ft_ga4}' AS table_name,
     event_date AS reference_date,
@@ -17,11 +16,11 @@ SELECT
     CURRENT_TIMESTAMP() AS execution_date
 FROM
     ${ref(data.tab_ft_ga4)}
+${when(incremental(), `WHERE event_date >= date_sub(current_date(), interval ${data.lookback_days} day)`) }
 GROUP BY 1, 2
 
 UNION ALL
 
--- Log de Volumetria Ads
 SELECT
     '${data.tab_ft_ads}' AS table_name,
     ad_date AS reference_date,
@@ -29,4 +28,5 @@ SELECT
     CURRENT_TIMESTAMP() AS execution_date
 FROM
     ${ref(data.tab_ft_ads)}
+${when(incremental(), `WHERE ad_date >= date_sub(current_date(), interval ${data.lookback_days} day)`) }
 GROUP BY 1, 2

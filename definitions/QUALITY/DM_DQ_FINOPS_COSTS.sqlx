@@ -13,18 +13,15 @@ SELECT
     date(creation_time) AS usage_date,
     job_id,
     user_email,
-    -- Identifica qual camada gerou o custo através dos labels que configuramos no SQLX
     (SELECT value FROM UNNEST(labels) WHERE key = "layer") AS layer_label,
     (SELECT value FROM UNNEST(labels) WHERE key = "flavor") AS flavor_label,
     total_bytes_processed,
-    -- Cálculo estimado: 5 USD por TB processado (ajustar conforme contrato)
-    SAFE_DIVIDE(total_bytes_processed, pow(1024, 4)) * 5 AS estimated_cost_usd,
+    -- Garantimos que o custo nunca seja nulo
+    COALESCE(SAFE_DIVIDE(total_bytes_processed, pow(1024, 4)) * 5, 0) AS estimated_cost_usd,
     creation_time AS execution_timestamp
 FROM
-    -- Acessa os metadados de jobs da região do projeto
     `${data.project_id}.region-${dataform.projectConfig.defaultLocation}.INFORMATION_SCHEMA.JOBS_BY_PROJECT`
 WHERE
-    -- Filtra apenas jobs gerados pelo Dataform (Service Account)
     job_id LIKE 'dataform-%'
     AND state = 'DONE'
     AND creation_time > timestamp_sub(current_timestamp(), interval 1 day)

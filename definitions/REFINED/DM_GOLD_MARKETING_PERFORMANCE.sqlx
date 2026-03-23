@@ -3,32 +3,40 @@ config {
     schema: data.refined_schema,
     name: data.tab_dm_mkt,
     assertions: {
-        uniqueKey: ["ad_date", "campaign_id"],
+        uniqueKey: ["ad_date"],
         rowConditions: [
-            "safe_divide(cost, conversions) >= 0"
+            "safe_divide(total_cost, total_conversions) >= 0"
         ]
     },
-    description: "Refined Layer: Visão de Marketing focada em ROAS por Campanha.",
-    tags: ["gold", "refined", "full", "marketing", "retail"]
+    description: "Refined Layer: Visão de Marketing consolidada por dia para cálculo real de CPA e ROAS.",
+    tags: ["gold", "refined", "full", "marketing"]
 }
 
-WITH ads AS (
+WITH ads_daily AS (
     SELECT 
-        ad_date, campaign_id, campaign_name,
-        SUM(ads_clicks) as clicks, SUM(ads_cost) as cost 
-    FROM ${ref(data.tab_ft_ads)} GROUP BY 1,2,3
+        ad_date,
+        SUM(ads_clicks) as total_clicks,
+        SUM(ads_cost) as total_cost 
+    FROM ${ref(data.tab_ft_ads)} 
+    GROUP BY 1
 ),
-ga4 AS (
+ga4_daily AS (
     SELECT 
         event_date,
-        -- Lógica de atribuição mockada para a demo
-        COUNT(DISTINCT ga_session_id) as sessions,
-        SUM(IF(event_name = 'purchase', 1, 0)) as conversions
-    FROM ${ref(data.tab_ft_ga4)} GROUP BY 1
+        COUNT(DISTINCT ga_session_id) as total_sessions,
+        SUM(IF(event_name = 'purchase', 1, 0)) as total_conversions
+    FROM ${ref(data.tab_ft_ga4)} 
+    GROUP BY 1
 )
 
 SELECT 
-    a.*, g.sessions, g.conversions,
-    SAFE_DIVIDE(a.cost, g.conversions) as cpa
-FROM ads a
-LEFT JOIN ga4 g ON a.ad_date = g.event_date
+    a.ad_date,
+    a.total_clicks,
+    a.total_cost,
+    g.total_sessions,
+    g.total_conversions,
+    SAFE_DIVIDE(a.total_cost, g.total_conversions) as cpa,
+    SAFE_DIVIDE(g.total_conversions, g.total_sessions) as conversion_rate,
+    CURRENT_TIMESTAMP() as insertion_at
+FROM ads_daily a
+LEFT JOIN ga4_daily g ON a.ad_date = g.event_date

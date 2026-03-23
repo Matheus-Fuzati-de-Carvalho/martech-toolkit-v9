@@ -10,7 +10,6 @@ config {
     description: "Quality Layer: Auditoria de campos nulos em dimensões críticas.",
     tags: ["quality", "monitoring", "full", "marketing", "retail"]
 }
-
 SELECT
     'GA4' AS source,
     'ga_session_id' AS column_audited,

@@ -26,18 +26,15 @@ SELECT
     Clicks AS ads_clicks,
     Impressions AS ads_impressions,
     (Cost / 1000000) AS ads_cost,
-    -- Gerando Hash SHA256 legível como String
+    -- Chave única por dia e campanha
     to_hex(sha256(concat(cast(_DATA_DATE as string), cast(CampaignId as string)))) AS surrogate_key,
     CURRENT_TIMESTAMP() AS atualization_date
 FROM
     `${data.raw_ads_project}.${data.raw_ads_dataset}.${data.raw_ads_table}`
+-- Ativamos a lógica incremental para não reprocessar o histórico inteiro (economia de custo)
+${when(incremental(), `WHERE _DATA_DATE >= date_sub(current_date(), interval ${data.lookback_days} day)`) }
 
-/* LOGICA INCREMENTAL/DINAMICA PARA PRODUÇÃO
-WHERE _DATA_DATE >= DATE_SUB(CURRENT_DATE(), INTERVAL ${data.lookback_days} DAY)
-*/
-
--- O Mago da Limpeza: Garante 1 linha por dia/campanha
 QUALIFY ROW_NUMBER() OVER(
     PARTITION BY _DATA_DATE, CampaignId 
-    ORDER BY CURRENT_TIMESTAMP() DESC
+    ORDER BY _PARTITIONTIME DESC -- Garante que pegamos a atualização mais recente do conector
 ) = 1
