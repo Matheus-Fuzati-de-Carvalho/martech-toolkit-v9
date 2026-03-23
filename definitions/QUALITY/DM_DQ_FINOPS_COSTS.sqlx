@@ -3,7 +3,7 @@ config {
     schema: data.quality_schema,
     name: "DM_DQ_FINOPS_COSTS",
     description: "Quality Layer: Monitoramento de custos (FinOps) baseado no processamento de jobs.",
-    tags: ["quality", "finops"],
+    tags: ["quality", "finops", "full", "marketing", "retail"],
     bigquery: {
         partitionBy: "usage_date"
     }

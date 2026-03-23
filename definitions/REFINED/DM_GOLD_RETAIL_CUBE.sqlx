@@ -10,7 +10,7 @@ config {
         ]
     },
     description: "Refined Layer: Cubo de Dados de Retail Media com quebra por Marca e Categoria via Regex.",
-    tags: ["gold", "retail", "refined"]
+    tags: ["gold", "retail", "refined", "full", "retail"]
 }
 
 SELECT

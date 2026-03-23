@@ -37,6 +37,7 @@ resource "google_workflows_workflow" "dataform_orchestrator" {
     tab_ft_ads         = var.tab_ft_ads
     tab_dm_mkt         = var.tab_dm_mkt
     tab_dm_retail      = var.tab_dm_retail
+    workspace_name     = "dev-workspace"
   })
 
   depends_on = [google_dataform_repository.martech_v9_repo]

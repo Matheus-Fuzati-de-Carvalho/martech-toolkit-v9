@@ -9,7 +9,7 @@ config {
         ]
     },
     description: "Refined Layer: Visão de Marketing focada em ROAS por Campanha.",
-    tags: ["gold", "marketing", "refined"]
+    tags: ["gold", "refined", "full", "marketing", "retail"]
 }
 
 WITH ads AS (

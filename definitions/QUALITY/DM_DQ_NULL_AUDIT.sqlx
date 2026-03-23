@@ -8,7 +8,7 @@ config {
         ]
     },
     description: "Quality Layer: Auditoria de campos nulos em dimensões críticas.",
-    tags: ["quality", "monitoring"]
+    tags: ["quality", "monitoring", "full", "marketing", "retail"]
 }
 
 SELECT

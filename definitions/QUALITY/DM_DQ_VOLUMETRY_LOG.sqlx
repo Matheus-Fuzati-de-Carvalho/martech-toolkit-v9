@@ -6,7 +6,7 @@ config {
         uniqueKey: ["table_name", "reference_date", "execution_date"]
     },
     description: "Quality Layer: Log histórico de volumetria das tabelas Trusted.",
-    tags: ["quality", "monitoring"]
+    tags: ["quality", "monitoring", "full", "marketing", "retail"]
 }
 
 -- Log de Volumetria GA4

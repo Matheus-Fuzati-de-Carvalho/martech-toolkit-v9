@@ -14,7 +14,8 @@ main:
           url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
           auth: {type: OAuth2}
           body:
-            gitCommitish: "main"
+            # gitCommitish: "main"
+            workspace: $${repository + "/workspaces/${workspace_name}"}
             codeCompilationConfig:
               vars:
                 project_id: "${project_id}"
