@@ -37,5 +37,5 @@ WHERE
 
 QUALIFY ROW_NUMBER() OVER(
     PARTITION BY _DATA_DATE, CampaignId 
-    ORDER BY _PARTITIONTIME DESC 
+    ORDER BY atualization_date DESC 
 ) = 1
