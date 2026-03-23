@@ -5,7 +5,7 @@ main:
         assign:
           - project_id: "${project_id}"
           - repository: "${repository}"
-          - flavor: "${flavor}"
+          - flavor: "$${default(args.flavor, 'marketing')}"
           - status_msg: "Iniciando execução"
 
     - execution_logic:
@@ -33,7 +33,7 @@ main:
                         tab_ft_ads: "${tab_ft_ads}"
                         tab_dm_mkt: "${tab_dm_mkt}"
                         tab_dm_retail: "${tab_dm_retail}"
-                        flavor: "${flavor}"
+                        flavor: "$${flavor}"
                         lookback_days: "${lookback_days}"
                 result: compilation_result
 
@@ -45,7 +45,7 @@ main:
                   body:
                     compilationResult: '$${compilation_result.body.name}'
                     invocationConfig:
-                      includedTags: ["${flavor}"]
+                      includedTags: ["$${flavor}"]
                       transitiveDependenciesIncluded: true
                 result: invocation
 
@@ -76,14 +76,15 @@ main:
             - get_invocation_actions:
                 call: http.post
                 args:
-                  # O uso das aspas simples aqui impede o erro de ':' no YAML
                   url: '$${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name + ":query"}'
                   auth: {type: OAuth2}
                 result: invocation_actions
 
-            - find_assertion_failure:
+            - set_default_failure_msg:
                 assign:
                   - status_msg: "Erro na execução (verificar logs do Dataform)"
+
+            - look_for_assertion_errors:
                 steps:
                   - loop_actions:
                       for:
@@ -100,7 +101,6 @@ main:
         except:
           as: e
           assign:
-            # Trocado ':' por '-' dentro da string para evitar conflitos de parse e envolvido em aspas
             - status_msg: '$${"Erro de sistema ou compilacao - " + e.message}'
 
     - prepare_and_publish:
@@ -109,7 +109,7 @@ main:
               assign:
                 - error_map:
                     message: '$${status_msg}'
-                    flavor: "${flavor}"
+                    flavor: "$${flavor}"
                     project: "${project_id}"
                 - error_json_str: '$${json.encode_to_string(error_map)}'
           - publish_to_pubsub:
