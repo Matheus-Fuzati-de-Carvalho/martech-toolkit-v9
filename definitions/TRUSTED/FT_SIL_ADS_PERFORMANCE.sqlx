@@ -2,6 +2,7 @@ config {
     type: "incremental",
     schema: data.silver_schema,
     name: data.tab_ft_ads,
+    uniqueKey: ["surrogate_key"],
     assertions: {
         uniqueKey: ["surrogate_key"],
         nonNull: ["ad_date", "campaign_id", "ads_cost"],
@@ -10,11 +11,12 @@ config {
             "ads_clicks >= 0"
         ]
     },
-    description: "Trusted Layer: Performance de Ads normalizada com deduplicação.",
+    description: "Trusted Layer: Performance de Ads normalizada com deduplicação e idempotência.",
     tags: ["silver", "ads", "trusted", "full", "marketing", "retail"],
     bigquery: {
         partitionBy: "ad_date",
-        clusterBy: ["campaign_id"]
+        clusterBy: ["campaign_id"],
+        updatePartitionFilter: `ad_date >= date_sub(current_date(), interval ${data.lookback_days} day)`
     }
 }
 
@@ -26,15 +28,14 @@ SELECT
     Clicks AS ads_clicks,
     Impressions AS ads_impressions,
     (Cost / 1000000) AS ads_cost,
-    -- Chave única por dia e campanha
     to_hex(sha256(concat(cast(_DATA_DATE as string), cast(CampaignId as string)))) AS surrogate_key,
     CURRENT_TIMESTAMP() AS atualization_date
 FROM
     `${data.raw_ads_project}.${data.raw_ads_dataset}.${data.raw_ads_table}`
--- Ativamos a lógica incremental para não reprocessar o histórico inteiro (economia de custo)
-${when(incremental(), `WHERE _DATA_DATE >= date_sub(current_date(), interval ${data.lookback_days} day)`) }
+WHERE
+    _DATA_DATE >= date_sub(current_date(), interval ${data.lookback_days} day)
 
 QUALIFY ROW_NUMBER() OVER(
     PARTITION BY _DATA_DATE, CampaignId 
-    ORDER BY _PARTITIONTIME DESC -- Garante que pegamos a atualização mais recente do conector
+    ORDER BY _PARTITIONTIME DESC 
 ) = 1

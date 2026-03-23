@@ -12,6 +12,13 @@ resource "google_project_iam_member" "workflow_dataform_editor" {
   member  = "serviceAccount:${google_service_account.workflow_sa.email}"
 }
 
+# Permite que a conta do Workflow invoque a si mesma (necessário para o Scheduler)
+resource "google_project_iam_member" "workflow_invoker" {
+  project = "toolkit-v9-01"
+  role    = "roles/workflows.invoker"
+  member  = "serviceAccount:martech-v9-workflow-sa@toolkit-v9-01.iam.gserviceaccount.com"
+}
+
 resource "google_workflows_workflow" "dataform_orchestrator" {
   name            = "martech-v9-orchestrator"
   region          = var.service_region

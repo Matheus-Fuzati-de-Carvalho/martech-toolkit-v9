@@ -2,6 +2,7 @@ config {
     type: "incremental",
     schema: data.silver_schema,
     name: data.tab_ft_ga4,
+    uniqueKey: ["surrogate_key"],
     assertions: {
         uniqueKey: ["surrogate_key"],
         nonNull: ["event_date", "event_name", "user_pseudo_id", "ga_session_id"],
@@ -9,62 +10,47 @@ config {
             "event_timestamp > 0"
         ]
     },
-    description: "Trusted Layer: Eventos GA4 consolidados (Daily + Intraday) com priorização.",
-    tags: ["silver", "ga4", "trusted","full", "marketing", "retail"],
+    description: "Trusted Layer: Eventos GA4 consolidados (Daily + Intraday) com priorização e idempotência.",
+    tags: ["silver", "ga4", "trusted", "full", "marketing", "retail"],
     bigquery: {
         partitionBy: "event_date",
-        clusterBy: ["event_name", "ga_session_id"]
+        clusterBy: ["event_name", "ga_session_id"],
+        updatePartitionFilter: `event_date >= date_sub(current_date(), interval ${data.lookback_days} day)`
     }
 }
 
 WITH all_sources AS (
-    -- TABELA DAILY (Prioridade 1)
     SELECT
         parse_date('%Y%m%d', event_date) AS event_date,
         event_timestamp,
         event_name,
         user_pseudo_id,
         (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS ga_session_id,
-        1 AS source_priority, -- Menor número = maior prioridade
+        IF(regexp_contains(_TABLE_SUFFIX, 'intraday'), 2, 1) AS source_priority,
         CURRENT_TIMESTAMP() AS atualization_date
     FROM
-        `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_20260310`
-
-    UNION ALL
-
-    -- TABELA INTRADAY (Prioridade 2)
-    SELECT
-        parse_date('%Y%m%d', event_date) AS event_date,
-        event_timestamp,
-        event_name,
-        user_pseudo_id,
-        (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS ga_session_id,
-        2 AS source_priority,
-        CURRENT_TIMESTAMP() AS atualization_date
-    FROM
-        `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_intraday_20260311`
+        `${data.raw_ga4_project}.${data.raw_ga4_dataset}.events_*`
+    WHERE
+        _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL ${data.lookback_days} DAY))
+        AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
 )
 
 SELECT
-    -- Adicionamos ga_session_id para tornar a chave realmente única
     to_hex(sha256(concat(
         cast(event_timestamp as string), 
         event_name, 
         user_pseudo_id, 
         cast(ga_session_id as string)
     ))) AS surrogate_key,
-    * EXCEPT(source_priority, atualization_date),
+    * EXCEPT(source_priority, atualization_date, rn),
     atualization_date
 FROM (
     SELECT 
         *,
-        -- Prioridade: Daily (1) ganha de Intraday (2) se houver o mesmo evento
         ROW_NUMBER() OVER(
-            PARTITION BY event_timestamp, event_name, user_pseudo_id 
+            PARTITION BY event_timestamp, event_name, user_pseudo_id, ga_session_id
             ORDER BY source_priority ASC, atualization_date DESC
         ) as rn
     FROM all_sources
 )
 WHERE rn = 1
--- Adicionamos a lógica incremental do Dataform
-${when(incremental(), `WHERE event_date >= date_sub(current_date(), interval ${data.lookback_days} day)`) }
