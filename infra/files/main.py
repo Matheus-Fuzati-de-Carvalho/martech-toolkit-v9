@@ -25,7 +25,6 @@ def send_email_notification(event, context):
     
     -------------------------------------------
     PROJETO: {data.get('project', 'N/A')}
-    SABOR: {data.get('flavor', 'N/A')}
     ERRO: {data.get('error_message', 'Sem detalhes')}
     -------------------------------------------
     
