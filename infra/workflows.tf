@@ -1,51 +1,90 @@
-# infra/workflows.tf
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - project_id: "${project_id}"
+          - repository: "${repository}"
+          - flavor: "${flavor}"
 
-resource "google_service_account" "workflow_sa" {
-  account_id   = "martech-v9-workflow-sa"
-  display_name = "Workflow Service Account - Martech Toolkit v9"
-  project      = local.project_id
-}
+    - compile_dataform:
+        call: http.post
+        args:
+          # Corrigido: Usamos apenas a variável direta para evitar o erro de sintaxe do Terraform
+          url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/compilationResults"}
+          auth: {type: OAuth2}
+          body:
+            # gitCommitish: "main"
+            workspace: $${repository + "/workspaces/${workspace_name}"}
+            codeCompilationConfig:
+              vars:
+                project_id: "${project_id}"
+                raw_ga4_project: "${raw_ga4_project}"
+                raw_ga4_dataset: "${raw_ga4_dataset}"
+                raw_ads_project: "${raw_ads_project}"
+                raw_ads_dataset: "${raw_ads_dataset}"
+                raw_ads_table: "${raw_ads_table}"
+                silver_schema: "${silver_schema}"
+                gold_schema: "${gold_schema}"
+                quality_schema: "${quality_schema}"
+                tab_ft_ga4: "${tab_ft_ga4}"
+                tab_ft_ads: "${tab_ft_ads}"
+                tab_dm_mkt: "${tab_dm_mkt}"
+                tab_dm_retail: "${tab_dm_retail}"
+                flavor: "${flavor}"
+                lookback_days: "${lookback_days}"
+        result: compilation_result
 
-resource "google_project_iam_member" "workflow_dataform_editor" {
-  project = local.project_id
-  role    = "roles/dataform.editor"
-  member  = "serviceAccount:${google_service_account.workflow_sa.email}"
-}
+    - run_invocation:
+        try:
+          steps:
+            - create_invocation:
+                call: http.post
+                args:
+                  # Corrigido para matar o 404
+                  url: $${"https://dataform.googleapis.com/v1beta1/" + repository + "/workflowInvocations"}
+                  auth: {type: OAuth2}
+                  body:
+                    compilationResult: $${compilation_result.body.name}
+                    invocationConfig:
+                      includedTags: ["${flavor}"]
+                      transitiveDependenciesIncluded: true
+                result: invocation
 
-# Permite que a conta do Workflow invoque a si mesma (necessário para o Scheduler)
-resource "google_project_iam_member" "workflow_invoker" {
-  project = "toolkit-v9-01"
-  role    = "roles/workflows.invoker"
-  member  = "serviceAccount:martech-v9-workflow-sa@toolkit-v9-01.iam.gserviceaccount.com"
-}
+            - wait_for_completion:
+                call: http.get
+                args:
+                  url: $${"https://dataform.googleapis.com/v1beta1/" + invocation.body.name}
+                  auth: {type: OAuth2}
+                result: invocation_status
 
-resource "google_workflows_workflow" "dataform_orchestrator" {
-  name            = "martech-v9-orchestrator"
-  region          = var.service_region
-  service_account = google_service_account.workflow_sa.id
-  project         = local.project_id
+            - check_status:
+                switch:
+                  - condition: $${invocation_status.body.state == "RUNNING"}
+                    next: wait_for_completion
+                  - condition: $${invocation_status.body.state != "SUCCEEDED"}
+                    raise: "Workflow invocation failed"
+        
+        retry:
+          attempts: 2
+          backoff:
+            initial_delay: 30
+            multiplier: 1
 
-  source_contents = templatefile("${path.module}/workflow_definition.yaml", {
-    project_id         = local.project_id
-    service_region     = var.service_region
-    repository         = google_dataform_repository.martech_v9_repo.id # Caminho completo
-    notification_email = var.notification_email
-    flavor             = var.flavor
-    lookback_days      = var.lookback_days
-    raw_ga4_project    = local.project_id
-    raw_ga4_dataset    = var.raw_ga4_dataset
-    raw_ads_project    = local.project_id
-    raw_ads_dataset    = var.raw_ads_dataset
-    raw_ads_table      = var.raw_ads_table
-    silver_schema      = var.silver_schema
-    gold_schema        = var.refined_schema
-    quality_schema     = "QUALITY"
-    tab_ft_ga4         = var.tab_ft_ga4
-    tab_ft_ads         = var.tab_ft_ads
-    tab_dm_mkt         = var.tab_dm_mkt
-    tab_dm_retail      = var.tab_dm_retail
-    workspace_name     = "dev-workspace"
-  })
-
-  depends_on = [google_dataform_repository.martech_v9_repo]
-}
+        except:
+          as: e
+          steps:
+            - prepare_error_payload:
+                assign:
+                  - error_map:
+                      message: $${e.message}
+                      flavor: "${flavor}"
+                      project: "${project_id}"
+                  - error_json_str: $${json.encode_to_string(error_map)}
+            - publish_to_pubsub:
+                call: googleapis.pubsub.v1.projects.topics.publish
+                args:
+                  topic: "projects/${project_id}/topics/martech-v9-alerts"
+                  body:
+                    messages:
+                      - data: $${base64.encode(text.encode(error_json_str))}
