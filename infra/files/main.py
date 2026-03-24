@@ -25,7 +25,7 @@ def send_email_notification(event, context):
     
     -------------------------------------------
     PROJETO: {data.get('project', 'N/A')}
-    ERRO: {data.get('error_message', 'Sem detalhes')}
+    ERRO: {data.get('message', 'Sem detalhes')}
     -------------------------------------------
     
     Verifique o console do Google Cloud para mais detalhes.
