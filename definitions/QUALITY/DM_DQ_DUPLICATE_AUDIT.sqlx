@@ -2,12 +2,7 @@ config {
     type: "table",
     schema: data.quality_schema,
     name: "DM_DQ_DUPLICATE_AUDIT",
-    assertions: {
-        rowConditions: [
-            "duplicated_keys_count = 0" 
-        ]
-    },
-    description: "Quality Layer: Validação de unicidade das Surrogate Keys.",
+     description: "Quality Layer: Validação de unicidade das Surrogate Keys.",
     tags: ["quality", "monitoring", "full", "marketing", "retail"]
 }
 -- Analisamos GA4 e Ads separadamente

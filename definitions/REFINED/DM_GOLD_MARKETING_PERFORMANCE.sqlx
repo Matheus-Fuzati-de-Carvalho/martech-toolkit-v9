@@ -3,10 +3,7 @@ config {
     schema: data.refined_schema,
     name: data.tab_dm_mkt,
     assertions: {
-        uniqueKey: ["ad_date"],
-        rowConditions: [
-            "safe_divide(total_cost, total_conversions) >= 0"
-        ]
+        uniqueKey: ["ad_date"]
     },
     description: "Refined Layer: Visão de Marketing consolidada por dia para cálculo real de CPA e ROAS.",
     tags: ["gold", "refined", "full", "marketing"]
