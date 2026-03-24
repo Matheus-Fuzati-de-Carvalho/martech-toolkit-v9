@@ -2,28 +2,61 @@ config {
     type: "incremental",
     schema: data.quality_schema,
     name: "DM_DQ_FINOPS_COSTS",
-    description: "Quality Layer: Monitoramento de custos (FinOps) baseado no processamento de jobs.",
-    tags: ["quality", "finops", "full", "marketing", "retail"],
+    description: "Quality Layer: FinOps resiliente a tabelas anônimas do Dataform.",
+    tags: ["quality", "finops", "full"],
     bigquery: {
-        partitionBy: "usage_date"
+        partitionBy: "usage_date",
+              labels: {"layer": "quality",
+        }
+   
     }
 }
 
-SELECT
-    date(creation_time) AS usage_date,
-    job_id,
-    user_email,
-    (SELECT value FROM UNNEST(labels) WHERE key = "layer") AS layer_label,
-    (SELECT value FROM UNNEST(labels) WHERE key = "flavor") AS flavor_label,
-    total_bytes_processed,
-    -- Garantimos que o custo nunca seja nulo
-    COALESCE(SAFE_DIVIDE(total_bytes_processed, pow(1024, 4)) * 5, 0) AS estimated_cost_usd,
-    creation_time AS execution_timestamp
-FROM
-    `${data.project_id}.region-${dataform.projectConfig.defaultLocation}.INFORMATION_SCHEMA.JOBS_BY_PROJECT`
-WHERE
-    job_id LIKE 'dataform-%'
-    AND state = 'DONE'
-    AND creation_time > timestamp_sub(current_timestamp(), interval 1 day)
+WITH master_label_map AS (
+    -- Seu mapa de labels que você validou que funciona
+    SELECT table_name, option_value AS label_struct FROM `${data.project_id}.${data.silver_schema}.INFORMATION_SCHEMA.TABLE_OPTIONS` WHERE option_name = 'labels'
+    UNION ALL
+    SELECT table_name, option_value AS label_struct FROM `${data.project_id}.${data.refined_schema}.INFORMATION_SCHEMA.TABLE_OPTIONS` WHERE option_name = 'labels'
+    UNION ALL
+    SELECT table_name, option_value AS label_struct FROM `${data.project_id}.${data.quality_schema}.INFORMATION_SCHEMA.TABLE_OPTIONS` WHERE option_name = 'labels'
+),
 
-${when(incremental(), `AND creation_time > (SELECT max(execution_timestamp) FROM ${self()})`)}
+jobs_base AS (
+    SELECT
+        date(creation_time) AS usage_date,
+        job_id,
+        user_email,
+        -- O SEGREDO: Se a tabela for anon, tentamos extrair o nome real de dentro da Query SQL
+        COALESCE(
+            REGEXP_EXTRACT(query, r'(?:FROM|TABLE|INTO)\s+`?[^`.\s]+\.[^`.\s]+\.([^`.\s]+)`?'),
+            destination_table.table_id
+        ) AS real_table_name,
+        total_bytes_processed,
+        creation_time,
+        query -- Mantemos a query para análise se necessário
+    FROM
+        `${data.project_id}.region-${dataform.projectConfig.defaultLocation}.INFORMATION_SCHEMA.JOBS_BY_PROJECT`
+    WHERE
+        job_id LIKE 'dataform-%'
+        AND state = 'DONE'
+        AND creation_time > timestamp_sub(current_timestamp(), interval 1 day)
+)
+
+SELECT
+    j.usage_date,
+    j.job_id,
+    j.user_email,
+    j.real_table_name as table_name,
+    
+    -- Agora o JOIN funciona, pois usamos o nome real extraído do SQL
+    COALESCE(REGEXP_EXTRACT(m.label_struct, r'layer", "([^"]+)"'), 'SISTEMA/TEMP') AS layer_label,
+    
+    j.total_bytes_processed,
+    COALESCE(SAFE_DIVIDE(j.total_bytes_processed, pow(1024, 4)) * 5, 0) AS estimated_cost_usd,
+    j.creation_time AS execution_timestamp
+FROM
+    jobs_base j
+LEFT JOIN
+    master_label_map m ON j.real_table_name = m.table_name
+
+${when(incremental(), `WHERE j.creation_time > (SELECT max(execution_timestamp) FROM ${self()})`)}

@@ -12,6 +12,10 @@ config {
     tags: ["silver", "ads", "trusted", "full", "marketing", "retail"],
     bigquery: {
         partitionBy: "ad_date",
+        labels: {
+            "layer": "silver",
+            "flavor": "${data.flavor}" // Aqui a variável vira label
+        },
         clusterBy: ["campaign_id"],
         updatePartitionFilter: `ad_date >= date_sub(current_date(), interval ${data.lookback_days} day)`
     }

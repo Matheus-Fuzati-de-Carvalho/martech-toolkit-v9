@@ -8,7 +8,12 @@ config {
         ]
     },
     description: "Quality Layer: Auditoria de campos nulos em dimensões críticas.",
-    tags: ["quality", "monitoring", "full", "marketing", "retail"]
+    tags: ["quality", "monitoring", "full", "marketing", "retail"],
+        bigquery: {
+        labels: {
+            "layer": "quality",
+        }
+    }
 }
 SELECT
     'GA4' AS source,

@@ -12,6 +12,10 @@ config {
     tags: ["silver", "ga4", "trusted", "full", "marketing", "retail"],
     bigquery: {
         partitionBy: "event_date",
+        labels: {
+            "layer": "silver",
+            "flavor": "${data.flavor}" // Aqui a variável vira label
+        },
         clusterBy: ["event_name", "ga_session_id"],
         updatePartitionFilter: `event_date >= date_sub(current_date(), interval ${data.lookback_days} day)`
     }

@@ -6,7 +6,12 @@ config {
         uniqueKey: ["table_name", "reference_date", "execution_date"]
     },
     description: "Quality Layer: Log histórico de volumetria das tabelas Trusted.",
-    tags: ["quality", "monitoring", "full", "marketing", "retail"]
+    tags: ["quality", "monitoring", "full", "marketing", "retail"],
+        bigquery: {
+        labels: {
+            "layer": "quality",
+        }
+    }
 }
 
 SELECT

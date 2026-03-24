@@ -10,7 +10,12 @@ config {
         ]
     },
     description: "Refined Layer: Cubo de Dados de Retail Media. Extrai Marca e Categoria do nome da campanha.",
-    tags: ["gold", "retail", "refined", "full"]
+    tags: ["gold", "retail", "refined", "full"],
+    bigquery: {
+        labels: {
+            "layer": "gold",
+        }
+    }
 }
 
 SELECT

@@ -6,7 +6,12 @@ config {
         uniqueKey: ["ad_date"]
     },
     description: "Refined Layer: Visão de Marketing consolidada por dia para cálculo real de CPA e ROAS.",
-    tags: ["gold", "refined", "full", "marketing"]
+    tags: ["gold", "refined", "full", "marketing"],
+    bigquery: {
+        labels: {
+            "layer": "gold",
+        }
+    }
 }
 
 WITH ads_daily AS (

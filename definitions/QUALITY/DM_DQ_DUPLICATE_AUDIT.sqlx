@@ -3,7 +3,12 @@ config {
     schema: data.quality_schema,
     name: "DM_DQ_DUPLICATE_AUDIT",
      description: "Quality Layer: Validação de unicidade das Surrogate Keys.",
-    tags: ["quality", "monitoring", "full", "marketing", "retail"]
+    tags: ["quality", "monitoring", "full", "marketing", "retail"],
+        bigquery: {
+        labels: {
+            "layer": "quality",
+        }
+    }
 }
 -- Analisamos GA4 e Ads separadamente
 WITH base_audit AS (
