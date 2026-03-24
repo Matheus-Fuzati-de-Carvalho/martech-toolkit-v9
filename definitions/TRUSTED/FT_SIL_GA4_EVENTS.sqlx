@@ -13,7 +13,7 @@ config {
     bigquery: {
         partitionBy: "event_date",
         labels: {
-            "layer": "silver",
+            "layer": "silver"
         },
         clusterBy: ["event_name", "ga_session_id"],
         updatePartitionFilter: `event_date >= date_sub(current_date(), interval ${data.lookback_days} day)`
