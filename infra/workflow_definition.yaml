@@ -61,29 +61,39 @@ main:
             - check_status:
                 switch:
                   - condition: $${invocation_status.body.state == "RUNNING"}
-                    next: wait_for_completion
+                    next: wait_a_bit # <<< ESTE É O SEGREDO. Não aponte para wait_for_completion!
+                  - condition: $${invocation_status.body.state == "SUCCEEDED"}
+                    next: success_finish
                   - condition: $${invocation_status.body.state != "SUCCEEDED"}
                     raise: "Workflow invocation failed"
-        
-        retry:
-          attempts: 2
-          backoff:
-            initial_delay: 30
-            multiplier: 1
+
+            - wait_a_bit:
+                call: sys.sleep
+                args:
+                  seconds: 15 
+                next: wait_for_completion 
+
+            - success_finish:
+                return: "Pipeline finalizado com sucesso!"
+                
+                retry:
+                  attempts: 2
+                  backoff:
+                    initial_delay: 15
+                    multiplier: 1
 
         except:
-          as: e
           steps:
             - prepare_error_payload:
                 assign:
                   - error_map:
-                      message: $${e.message}
-                      flavor: "${flavor}"
+                      message: "Falha Crítica no Pipeline"
                       project: "${project_id}"
                   - error_json_str: $${json.encode_to_string(error_map)}
             - publish_to_pubsub:
                 call: googleapis.pubsub.v1.projects.topics.publish
                 args:
+                  # Deixe o Terraform injetar o ID do projeto diretamente aqui
                   topic: "projects/${project_id}/topics/martech-v9-alerts"
                   body:
                     messages:
